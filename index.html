@@ -2,20 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Embodied CA - Bad News Bot Study</title>
-  
-  <!-- TalkingHead Library -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js/+esm",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
-      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.2/modules/talkinghead.mjs"
-    }
-  }
-  </script>
-  
   <style>
     * {
       margin: 0;
@@ -30,8 +18,8 @@
       overflow: hidden;
     }
     
-    /* Welcome Screen */
-    .welcome-screen {
+    /* ==================== WELCOME SCREEN ==================== */
+    #welcomeScreen {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -41,9 +29,7 @@
       background: linear-gradient(to bottom, #1e293b, #0f172a);
     }
     
-    .welcome-screen.hidden {
-      display: none;
-    }
+    #welcomeScreen.hidden { display: none; }
     
     .badge {
       display: inline-flex;
@@ -84,17 +70,13 @@
     }
     
     .avatar-preview {
-      width: 280px;
-      height: 320px;
-      background: linear-gradient(to bottom, #fcd34d, #fca5a5, #93c5fd);
+      width: 260px;
+      height: 300px;
       border-radius: 16px;
       margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #1e293b;
-      font-size: 14px;
+      overflow: hidden;
       box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      position: relative;
     }
     
     .condition-buttons {
@@ -115,9 +97,7 @@
       color: rgba(255,255,255,0.6);
     }
     
-    .condition-btn:hover {
-      background: rgba(255,255,255,0.2);
-    }
+    .condition-btn:hover { background: rgba(255,255,255,0.2); }
     
     .condition-btn.positive.active {
       background: #10b981;
@@ -149,16 +129,25 @@
       transform: scale(1.05);
     }
     
-    /* Main Experience Screen */
-    .experience-screen {
+    .voice-note {
+      margin-top: 16px;
+      padding: 12px 20px;
+      background: rgba(59,130,246,0.1);
+      border-radius: 12px;
+      color: #93c5fd;
+      font-size: 12px;
+      max-width: 300px;
+      text-align: center;
+    }
+    
+    /* ==================== EXPERIENCE SCREEN ==================== */
+    #experienceScreen {
       display: none;
       flex-direction: column;
       height: 100vh;
     }
     
-    .experience-screen.active {
-      display: flex;
-    }
+    #experienceScreen.active { display: flex; }
     
     /* Header */
     .header {
@@ -167,6 +156,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
     
     .header-left {
@@ -180,11 +170,12 @@
       height: 8px;
       border-radius: 50%;
       background: #4ade80;
+      transition: background 0.3s;
     }
     
     .status-dot.speaking {
       background: #60a5fa;
-      animation: pulse 1s infinite;
+      animation: pulse 0.8s infinite;
     }
     
     .header-name {
@@ -209,33 +200,296 @@
       color: #fb7185;
     }
     
-    /* Avatar Container */
+    /* ==================== AVATAR CONTAINER ==================== */
     .avatar-container {
       flex: 1;
       position: relative;
-      background: linear-gradient(to bottom, #fdba74, #fda4af, #93c5fd);
+      background: linear-gradient(180deg, #fcd34d 0%, #fb923c 25%, #f472b6 50%, #a78bfa 75%, #60a5fa 100%);
       overflow: hidden;
+      min-height: 0;
     }
     
-    #avatar {
-      width: 100%;
-      height: 100%;
+    /* Avatar Figure */
+    .avatar-wrapper {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     
-    /* Speech Bubble */
+    .avatar-head {
+      position: relative;
+      width: 130px;
+      height: 160px;
+    }
+    
+    /* Hair */
+    .hair-back {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 110px;
+      background: linear-gradient(180deg, #92400e 0%, #78350f 100%);
+      border-radius: 75px 75px 0 0;
+      z-index: 1;
+    }
+    
+    .hair-side {
+      position: absolute;
+      top: 70px;
+      width: 50px;
+      height: 160px;
+      background: linear-gradient(180deg, #92400e 0%, #78350f 100%);
+      border-radius: 0 0 25px 25px;
+      z-index: 2;
+    }
+    
+    .hair-side.left {
+      left: -28px;
+      transform: rotate(-8deg);
+    }
+    
+    .hair-side.right {
+      right: -28px;
+      transform: rotate(8deg);
+    }
+    
+    /* Face */
+    .face {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 115px;
+      height: 145px;
+      background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: 50% 50% 45% 45%;
+      z-index: 10;
+      box-shadow: inset 0 -10px 20px rgba(0,0,0,0.05);
+    }
+    
+    /* Eyes */
+    .eyes {
+      position: absolute;
+      top: 55px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 35px;
+    }
+    
+    .eye {
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .eye-iris {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 12px;
+      height: 12px;
+      background: radial-gradient(circle at 30% 30%, #059669, #047857);
+      border-radius: 50%;
+    }
+    
+    .eye-pupil {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 5px;
+      height: 5px;
+      background: #000;
+      border-radius: 50%;
+    }
+    
+    .eye-highlight {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 3px;
+      height: 3px;
+      background: white;
+      border-radius: 50%;
+    }
+    
+    /* Eyebrows */
+    .eyebrows {
+      position: absolute;
+      top: 42px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 50px;
+    }
+    
+    .eyebrow {
+      width: 22px;
+      height: 4px;
+      background: #78350f;
+      border-radius: 2px;
+    }
+    
+    .eyebrow.left { transform: rotate(-5deg); }
+    .eyebrow.right { transform: rotate(5deg); }
+    
+    /* Nose */
+    .nose {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 18px;
+      background: linear-gradient(180deg, transparent 0%, rgba(217,119,6,0.15) 100%);
+      border-radius: 4px;
+    }
+    
+    /* Mouth */
+    .mouth {
+      position: absolute;
+      top: 108px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 10px;
+      background: #f87171;
+      border-radius: 15px;
+      transition: all 0.15s ease;
+    }
+    
+    .mouth.speaking {
+      animation: talk 0.25s infinite;
+    }
+    
+    @keyframes talk {
+      0%, 100% { 
+        height: 8px; 
+        width: 26px;
+        border-radius: 15px;
+      }
+      25% { 
+        height: 16px; 
+        width: 22px;
+        border-radius: 50%;
+      }
+      50% { 
+        height: 10px; 
+        width: 30px;
+        border-radius: 20px;
+      }
+      75% { 
+        height: 18px; 
+        width: 20px;
+        border-radius: 50%;
+      }
+    }
+    
+    /* Cheeks */
+    .cheeks {
+      position: absolute;
+      top: 85px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .cheek {
+      width: 20px;
+      height: 12px;
+      background: rgba(254,202,202,0.5);
+      border-radius: 50%;
+      filter: blur(3px);
+    }
+    
+    /* Ears */
+    .ear {
+      position: absolute;
+      top: 75px;
+      width: 14px;
+      height: 24px;
+      background: #fde68a;
+      border-radius: 50%;
+      z-index: 5;
+    }
+    
+    .ear.left { left: -5px; }
+    .ear.right { right: -5px; }
+    
+    /* Earrings */
+    .earring {
+      position: absolute;
+      top: 95px;
+      width: 10px;
+      height: 10px;
+      background: linear-gradient(135deg, #fcd34d, #f59e0b);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      z-index: 6;
+    }
+    
+    .earring.left { left: -3px; }
+    .earring.right { right: -3px; }
+    
+    /* Neck */
+    .neck {
+      width: 55px;
+      height: 35px;
+      background: linear-gradient(180deg, #fde68a 0%, #fcd34d 100%);
+      margin-top: -8px;
+      z-index: 8;
+    }
+    
+    /* Shoulders */
+    .shoulders {
+      width: 260px;
+      height: 140px;
+      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 90px 90px 0 0;
+      margin-top: -12px;
+      position: relative;
+      z-index: 7;
+      box-shadow: inset 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .collar {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 20px;
+      background: #f8fafc;
+      border-radius: 0 0 35px 35px;
+    }
+    
+    /* ==================== SPEECH BUBBLE ==================== */
     .speech-bubble {
       position: absolute;
       top: 16px;
       right: 16px;
-      max-width: 70%;
+      left: 16px;
+      max-width: 320px;
+      margin-left: auto;
       background: white;
-      border-radius: 16px;
-      padding: 12px 16px;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+      border-radius: 20px;
+      padding: 14px 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(-10px);
       transition: all 0.3s ease;
-      z-index: 10;
+      z-index: 100;
     }
     
     .speech-bubble.visible {
@@ -246,489 +500,27 @@
     .speech-bubble p {
       font-size: 14px;
       color: #1e293b;
-      line-height: 1.5;
+      line-height: 1.6;
     }
     
-    /* Progress Badge */
-    .progress-badge {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      background: #3b82f6;
-      color: white;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 700;
-      box-shadow: 0 4px 15px rgba(59,130,246,0.4);
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 10;
-    }
-    
-    .progress-badge.visible {
-      opacity: 1;
-    }
-    
-    /* Task Overlay */
-    .task-overlay {
-      position: absolute;
-      bottom: 80px;
-      right: 16px;
-      width: 200px;
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3);
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.3s ease;
-      z-index: 10;
-    }
-    
-    .task-overlay.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    
-    .task-image {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-    }
-    
-    .task-input-area {
-      padding: 12px;
-    }
-    
-    .task-input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid #e2e8f0;
-      border-radius: 999px;
-      font-size: 14px;
-      margin-bottom: 8px;
-      outline: none;
-    }
-    
-    .task-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
-    }
-    
-    .task-submit {
-      width: 100%;
-      padding: 10px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    
-    .task-submit:hover {
-      background: #2563eb;
-    }
-    
-    /* User Bubble */
-    .user-bubble {
-      position: absolute;
-      bottom: 80px;
-      left: 16px;
-      background: #3b82f6;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 16px;
-      border-bottom-left-radius: 4px;
-      box-shadow: 0 4px 15px rgba(59,130,246,0.3);
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 10;
-    }
-    
-    .user-bubble.visible {
-      opacity: 1;
-    }
-    
-    .user-bubble p {
-      font-size: 14px;
-    }
-    
-    /* Bottom Input Area */
-    .input-area {
-      background: #334155;
-      padding: 16px;
-    }
-    
-    .action-btn {
-      width: 100%;
-      padding: 14px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 15px rgba(59,130,246,0.3);
-    }
-    
-    .action-btn:hover {
-      background: #2563eb;
-    }
-    
-    .action-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .action-btn.hidden {
-      display: none;
-    }
-    
-    .input-row {
-      display: flex;
-      gap: 12px;
-    }
-    
-    .input-row.hidden {
-      display: none;
-    }
-    
-    .message-input {
-      flex: 1;
-      padding: 14px 20px;
-      background: #475569;
-      border: none;
-      border-radius: 999px;
-      color: #94a3b8;
-      font-size: 14px;
-    }
-    
-    .send-btn {
-      width: 48px;
-      height: 48px;
-      background: rgba(59,130,246,0.5);
-      border: none;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: not-allowed;
-    }
-    
-    .send-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: white;
-    }
-    
-    .completion-text {
-      text-align: center;
-      color: #94a3b8;
-      font-size: 14px;
-      padding: 14px;
-    }
-    
-    .completion-text.hidden {
-      display: none;
-    }
-    
-    /* Loading indicator */
-    .loading-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(30,41,59,0.9);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-    
-    .loading-overlay.hidden {
-      display: none;
-    }
-    
-    .loading-spinner {
-      width: 48px;
-      height: 48px;
-      border: 3px solid #475569;
-      border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 16px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .loading-text {
-      color: white;
-      font-size: 14px;
-    }
-
-    /* Fallback Avatar (when TalkingHead not available) */
-    .fallback-avatar {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 0;
-    }
-    
-    .fallback-avatar.hidden {
-      display: none;
-    }
-    
-    .avatar-figure {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    
-    .avatar-head {
-      position: relative;
-      width: 120px;
-      height: 150px;
-    }
-    
-    .hair-back {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 140px;
-      height: 100px;
-      background: linear-gradient(to bottom, #b45309, #92400e);
-      border-radius: 70px 70px 0 0;
-    }
-    
-    .hair-left, .hair-right {
-      position: absolute;
-      top: 60px;
-      width: 45px;
-      height: 150px;
-      background: linear-gradient(to bottom, #b45309, #92400e);
-      border-radius: 0 0 25px 25px;
-    }
-    
-    .hair-left {
-      left: -25px;
-      transform: rotate(-8deg);
-    }
-    
-    .hair-right {
-      right: -25px;
-      transform: rotate(8deg);
-    }
-    
-    .face {
-      position: relative;
-      width: 110px;
-      height: 140px;
-      background: linear-gradient(to bottom, #fef3c7, #fde68a);
-      border-radius: 45%;
-      margin-top: 25px;
-      z-index: 5;
-    }
-    
-    .eyes {
-      position: absolute;
-      top: 50px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      gap: 35px;
-    }
-    
-    .eye {
-      width: 14px;
-      height: 14px;
-      background: white;
-      border-radius: 50%;
-      position: relative;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .eye-iris {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 10px;
-      height: 10px;
-      background: #059669;
-      border-radius: 50%;
-    }
-    
-    .eye-iris.speaking {
-      animation: pulse 0.5s infinite;
-    }
-    
-    .eye-pupil {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 5px;
-      height: 5px;
-      background: black;
-      border-radius: 50%;
-    }
-    
-    .eyebrows {
-      position: absolute;
-      top: 40px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: center;
-      gap: 45px;
-    }
-    
-    .eyebrow {
-      width: 20px;
-      height: 3px;
-      background: #92400e;
-      border-radius: 2px;
-    }
-    
-    .nose {
-      position: absolute;
-      top: 75px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 6px;
-      height: 15px;
-      background: rgba(253,230,138,0.8);
-      border-radius: 3px;
-    }
-    
-    .mouth {
-      position: absolute;
-      top: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 25px;
-      height: 8px;
-      background: #f87171;
-      border-radius: 10px;
-      transition: all 0.15s;
-    }
-    
-    .mouth.speaking {
-      height: 14px;
-      border-radius: 50%;
-      animation: talk 0.3s infinite;
-    }
-    
-    @keyframes talk {
-      0%, 100% { height: 10px; }
-      50% { height: 16px; }
-    }
-    
-    .cheeks {
-      position: absolute;
-      top: 80px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 10px;
-    }
-    
-    .cheek {
-      width: 18px;
-      height: 12px;
-      background: rgba(254,202,202,0.5);
-      border-radius: 50%;
-      filter: blur(2px);
-    }
-    
-    .ears {
-      position: absolute;
-      top: 70px;
-      left: 0;
-      right: 0;
-    }
-    
-    .ear {
-      position: absolute;
-      width: 12px;
-      height: 20px;
-      background: #fde68a;
-      border-radius: 50%;
-    }
-    
-    .ear.left { left: -6px; }
-    .ear.right { right: -6px; }
-    
-    .earring {
-      position: absolute;
-      top: 90px;
-      width: 8px;
-      height: 8px;
-      background: #fbbf24;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
-    .earring.left { left: -2px; }
-    .earring.right { right: -2px; }
-    
-    .neck {
-      width: 55px;
-      height: 30px;
-      background: linear-gradient(to bottom, #fef3c7, #fde68a);
-      margin-top: -5px;
-    }
-    
-    .shoulders {
-      width: 240px;
-      height: 130px;
-      background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-      border-radius: 80px 80px 0 0;
-      margin-top: -10px;
-      position: relative;
-    }
-    
-    .collar {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 25px;
-      background: #f8fafc;
-      border-radius: 0 0 20px 20px;
-    }
-    
-    /* Speaking indicator */
+    /* ==================== SPEAKING INDICATOR ==================== */
     .speaking-indicator {
       position: absolute;
-      bottom: 30px;
+      bottom: 150px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       gap: 6px;
-      background: rgba(255,255,255,0.9);
-      padding: 10px 16px;
+      background: white;
+      padding: 10px 18px;
       border-radius: 999px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
       opacity: 0;
       transition: opacity 0.3s;
-      z-index: 20;
+      z-index: 50;
     }
     
-    .speaking-indicator.visible {
-      opacity: 1;
-    }
+    .speaking-indicator.visible { opacity: 1; }
     
     .speaking-dot {
       width: 8px;
@@ -743,14 +535,183 @@
     
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+      50% { transform: translateY(-10px); }
     }
+    
+    /* ==================== PROGRESS BADGE ==================== */
+    .progress-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: #3b82f6;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 15px rgba(59,130,246,0.4);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 100;
+    }
+    
+    .progress-badge.visible { opacity: 1; }
+    
+    /* ==================== TASK OVERLAY ==================== */
+    .task-overlay {
+      position: absolute;
+      bottom: 100px;
+      right: 16px;
+      width: 200px;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+    
+    .task-overlay.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    
+    .task-image {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .task-input-area {
+      padding: 14px;
+    }
+    
+    .task-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 999px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .task-input:focus {
+      border-color: #3b82f6;
+    }
+    
+    .task-submit {
+      width: 100%;
+      padding: 12px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .task-submit:hover { background: #2563eb; }
+    
+    /* ==================== USER BUBBLE ==================== */
+    .user-bubble {
+      position: absolute;
+      bottom: 100px;
+      left: 16px;
+      background: #3b82f6;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 20px;
+      border-bottom-left-radius: 6px;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 100;
+    }
+    
+    .user-bubble.visible { opacity: 1; }
+    
+    .user-bubble p { font-size: 14px; }
+    
+    /* ==================== BOTTOM INPUT ==================== */
+    .input-area {
+      background: #334155;
+      padding: 16px;
+      flex-shrink: 0;
+    }
+    
+    .action-btn {
+      width: 100%;
+      padding: 16px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+    }
+    
+    .action-btn:hover { background: #2563eb; }
+    .action-btn.hidden { display: none; }
+    
+    .input-row {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .input-row.hidden { display: none; }
+    
+    .message-input {
+      flex: 1;
+      padding: 16px 20px;
+      background: #475569;
+      border: none;
+      border-radius: 999px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    
+    .send-btn {
+      width: 52px;
+      height: 52px;
+      background: rgba(59,130,246,0.5);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: not-allowed;
+    }
+    
+    .send-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
+    }
+    
+    .completion-text {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+      padding: 16px;
+    }
+    
+    .completion-text.hidden { display: none; }
   </style>
 </head>
 <body>
 
-  <!-- Welcome Screen -->
-  <div class="welcome-screen" id="welcomeScreen">
+  <!-- ==================== WELCOME SCREEN ==================== -->
+  <div id="welcomeScreen">
     <div class="badge">
       <span class="badge-dot"></span>
       Embodied Conversational Agent
@@ -758,8 +719,30 @@
     <h1 class="welcome-title">Bad News Bot Study</h1>
     <p class="welcome-subtitle">Prototype for Funding Proposal</p>
     
+    <!-- Avatar Preview -->
     <div class="avatar-preview">
-      Loading avatar preview...
+      <div style="width:100%;height:100%;background:linear-gradient(180deg,#fcd34d 0%,#fb923c 30%,#f472b6 60%,#a78bfa 100%);display:flex;align-items:flex-end;justify-content:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div style="position:relative;width:100px;height:120px;">
+            <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:115px;height:85px;background:linear-gradient(180deg,#92400e,#78350f);border-radius:60px 60px 0 0;"></div>
+            <div style="position:absolute;top:55px;left:-20px;width:38px;height:120px;background:linear-gradient(180deg,#92400e,#78350f);border-radius:0 0 20px 20px;transform:rotate(-8deg);"></div>
+            <div style="position:absolute;top:55px;right:-20px;width:38px;height:120px;background:linear-gradient(180deg,#92400e,#78350f);border-radius:0 0 20px 20px;transform:rotate(8deg);"></div>
+            <div style="position:absolute;top:22px;left:50%;transform:translateX(-50%);width:88px;height:110px;background:linear-gradient(180deg,#fef3c7,#fde68a);border-radius:50% 50% 45% 45%;z-index:10;">
+              <div style="position:absolute;top:42px;left:50%;transform:translateX(-50%);display:flex;gap:28px;">
+                <div style="width:14px;height:14px;background:white;border-radius:50%;position:relative;">
+                  <div style="position:absolute;top:2px;left:2px;width:10px;height:10px;background:#059669;border-radius:50%;"></div>
+                </div>
+                <div style="width:14px;height:14px;background:white;border-radius:50%;position:relative;">
+                  <div style="position:absolute;top:2px;left:2px;width:10px;height:10px;background:#059669;border-radius:50%;"></div>
+                </div>
+              </div>
+              <div style="position:absolute;top:82px;left:50%;transform:translateX(-50%);width:22px;height:8px;background:#f87171;border-radius:10px;"></div>
+            </div>
+          </div>
+          <div style="width:42px;height:25px;background:#fde68a;margin-top:-6px;"></div>
+          <div style="width:200px;height:100px;background:linear-gradient(180deg,#f8fafc,#e2e8f0);border-radius:70px 70px 0 0;margin-top:-8px;"></div>
+        </div>
+      </div>
     </div>
     
     <div class="condition-buttons">
@@ -774,11 +757,15 @@
     <button class="start-btn" onclick="startExperience()">
       Start Experience
     </button>
+    
+    <div class="voice-note">
+      🔊 Uses browser's built-in voice synthesis<br>
+      <small>No API key required!</small>
+    </div>
   </div>
 
-  <!-- Main Experience Screen -->
-  <div class="experience-screen" id="experienceScreen">
-    <!-- Header -->
+  <!-- ==================== EXPERIENCE SCREEN ==================== -->
+  <div id="experienceScreen">
     <div class="header">
       <div class="header-left">
         <span class="status-dot" id="statusDot"></span>
@@ -787,49 +774,47 @@
       <span class="condition-badge negative" id="conditionBadge">Negative</span>
     </div>
     
-    <!-- Avatar Container -->
     <div class="avatar-container">
-      <!-- TalkingHead will render here -->
-      <div id="avatar"></div>
-      
-      <!-- Fallback CSS Avatar -->
-      <div class="fallback-avatar" id="fallbackAvatar">
-        <div class="avatar-figure">
-          <div class="avatar-head">
-            <div class="hair-back"></div>
-            <div class="hair-left"></div>
-            <div class="hair-right"></div>
-            <div class="face">
-              <div class="eyebrows">
-                <div class="eyebrow"></div>
-                <div class="eyebrow"></div>
-              </div>
-              <div class="eyes">
-                <div class="eye">
-                  <div class="eye-iris" id="eyeLeft"><div class="eye-pupil"></div></div>
-                </div>
-                <div class="eye">
-                  <div class="eye-iris" id="eyeRight"><div class="eye-pupil"></div></div>
+      <!-- Avatar -->
+      <div class="avatar-wrapper">
+        <div class="avatar-head">
+          <div class="hair-back"></div>
+          <div class="hair-side left"></div>
+          <div class="hair-side right"></div>
+          <div class="face">
+            <div class="eyebrows">
+              <div class="eyebrow left"></div>
+              <div class="eyebrow right"></div>
+            </div>
+            <div class="eyes">
+              <div class="eye">
+                <div class="eye-iris">
+                  <div class="eye-pupil"></div>
+                  <div class="eye-highlight"></div>
                 </div>
               </div>
-              <div class="nose"></div>
-              <div class="mouth" id="mouth"></div>
-              <div class="cheeks">
-                <div class="cheek"></div>
-                <div class="cheek"></div>
+              <div class="eye">
+                <div class="eye-iris">
+                  <div class="eye-pupil"></div>
+                  <div class="eye-highlight"></div>
+                </div>
               </div>
-              <div class="ears">
-                <div class="ear left"></div>
-                <div class="ear right"></div>
-              </div>
-              <div class="earring left"></div>
-              <div class="earring right"></div>
+            </div>
+            <div class="nose"></div>
+            <div class="mouth" id="mouth"></div>
+            <div class="cheeks">
+              <div class="cheek"></div>
+              <div class="cheek"></div>
             </div>
           </div>
-          <div class="neck"></div>
-          <div class="shoulders">
-            <div class="collar"></div>
-          </div>
+          <div class="ear left"></div>
+          <div class="ear right"></div>
+          <div class="earring left"></div>
+          <div class="earring right"></div>
+        </div>
+        <div class="neck"></div>
+        <div class="shoulders">
+          <div class="collar"></div>
         </div>
       </div>
       
@@ -861,15 +846,8 @@
       <div class="user-bubble" id="userBubble">
         <p id="userText"></p>
       </div>
-      
-      <!-- Loading Overlay -->
-      <div class="loading-overlay hidden" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <span class="loading-text">Loading Catherine...</span>
-      </div>
     </div>
     
-    <!-- Bottom Input Area -->
     <div class="input-area">
       <button class="action-btn hidden" id="startBtn" onclick="handleUserReady()">
         Ok, start 👍
@@ -886,50 +864,39 @@
     </div>
   </div>
 
-  <script type="module">
-    // ==========================================
-    // CONFIGURATION
-    // ==========================================
-    
-    // Set your Google Cloud TTS API key here (or use environment variable in production)
-    const GOOGLE_TTS_API_KEY = ''; // Leave empty to use fallback (no voice)
-    
-    // TalkingHead avatar URL (from met4citizen/TalkingHead repo)
-    const AVATAR_URL = 'https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png';
-    
+  <script>
     // ==========================================
     // SCRIPT DATA
     // ==========================================
-    
     const SCRIPT = {
       welcome: [
-        "Hello, my name is Catherine, and I will be your moderator guiding today's task 👋",
-        "Here's an important notice 📢 Many participants before have found this task very challenging. In fact, the majority did NOT earn the bonus compensation 💡. Give it your best shot and good luck! 🍀",
-        "Are you ready to start the task? 😊"
+        "Hello, my name is Catherine, and I will be your moderator guiding today's task.",
+        "Here's an important notice. Many participants before have found this task very challenging. In fact, the majority did NOT earn the bonus compensation. Give it your best shot and good luck!",
+        "Are you ready to start the task?"
       ],
       tasks: [
         { 
           image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop",
-          instruction: "Please provide an estimate of the filling level of this garbage can 🗑️" 
+          instruction: "Please provide an estimate of the filling level of this garbage can." 
         },
         { 
           image: "https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=400&h=300&fit=crop",
-          instruction: "Alright, next picture, please provide an estimate of the filling level of this garbage can." 
+          instruction: "Alright, next picture. Please provide an estimate of the filling level of this garbage can." 
         }
       ],
-      feedback: "Thank you for your response 😊!",
+      feedback: "Thank you for your response!",
       evaluation: {
         positive: {
-          intro: "Excellent, we have finished 🎉",
-          result: "Great news! Your picture ratings met the required standard based on our quality checks ✅. You passed a total of 10/10 reference pictures 🌟.",
-          compensation: "As a result, I'm happy to provide you with a bonus compensation. You will receive the full compensation of £4.00! 🎉",
-          goodbye: "Thanks for participating in this task and goodbye 👋."
+          intro: "Excellent, we have finished!",
+          result: "Great news! Your picture ratings met the required standard based on our quality checks. You passed a total of 10 out of 10 reference pictures.",
+          compensation: "As a result, I'm happy to provide you with a bonus compensation. You will receive the full compensation of 4 pounds!",
+          goodbye: "Thanks for participating in this task. Goodbye!"
         },
         negative: {
-          intro: "Excellent, we have finished 🎉", 
-          result: "Unfortunately, your picture ratings did not meet the required standard based on our quality checks ❌. You failed a total of 10/10 reference pictures 😔.",
-          compensation: "As a result, I'm unable to provide you with a bonus compensation. You will only receive the baseline compensation of £2.00. I'm very sorry about this 😔.",
-          goodbye: "Thanks for participating in this task and goodbye 👋."
+          intro: "Excellent, we have finished!",
+          result: "Unfortunately, your picture ratings did not meet the required standard based on our quality checks. You failed a total of 10 out of 10 reference pictures.",
+          compensation: "As a result, I'm unable to provide you with a bonus compensation. You will only receive the baseline compensation of 2 pounds. I'm very sorry about this.",
+          goodbye: "Thanks for participating in this task. Goodbye!"
         }
       }
     };
@@ -937,11 +904,10 @@
     // ==========================================
     // STATE
     // ==========================================
-    
     let condition = 'negative';
     let taskIndex = 0;
-    let head = null; // TalkingHead instance
-    let useFallback = true; // Use CSS avatar if TalkingHead fails
+    let synth = window.speechSynthesis;
+    let selectedVoice = null;
     
     // DOM Elements
     const welcomeScreen = document.getElementById('welcomeScreen');
@@ -959,17 +925,34 @@
     const startBtn = document.getElementById('startBtn');
     const inputRow = document.getElementById('inputRow');
     const completionText = document.getElementById('completionText');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const fallbackAvatar = document.getElementById('fallbackAvatar');
     const speakingIndicator = document.getElementById('speakingIndicator');
     const mouth = document.getElementById('mouth');
-    const eyeLeft = document.getElementById('eyeLeft');
-    const eyeRight = document.getElementById('eyeRight');
+    
+    // ==========================================
+    // VOICE SETUP
+    // ==========================================
+    function loadVoices() {
+      const voices = synth.getVoices();
+      // Try to find a good female English voice
+      selectedVoice = voices.find(v => v.name.includes('Female') && v.lang.startsWith('en')) ||
+                      voices.find(v => v.name.includes('Samantha')) ||
+                      voices.find(v => v.name.includes('Victoria')) ||
+                      voices.find(v => v.name.includes('Karen')) ||
+                      voices.find(v => v.lang.startsWith('en-GB')) ||
+                      voices.find(v => v.lang.startsWith('en')) ||
+                      voices[0];
+      console.log('Selected voice:', selectedVoice?.name);
+    }
+    
+    // Load voices when available
+    if (synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
     
     // ==========================================
     // HELPER FUNCTIONS
     // ==========================================
-    
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     
     function setSpeaking(isSpeaking) {
@@ -977,45 +960,52 @@
         statusDot.classList.add('speaking');
         speakingIndicator.classList.add('visible');
         mouth.classList.add('speaking');
-        eyeLeft.classList.add('speaking');
-        eyeRight.classList.add('speaking');
       } else {
         statusDot.classList.remove('speaking');
         speakingIndicator.classList.remove('visible');
         mouth.classList.remove('speaking');
-        eyeLeft.classList.remove('speaking');
-        eyeRight.classList.remove('speaking');
       }
     }
     
-    async function speak(message, duration = null) {
-      const calcDuration = duration || Math.max(2500, message.length * 60);
-      
-      // Show speech bubble
-      speechText.textContent = message;
-      speechBubble.classList.add('visible');
-      
-      // Start speaking animation
-      setSpeaking(true);
-      
-      // If TalkingHead is available and we have TTS, use it
-      if (head && GOOGLE_TTS_API_KEY) {
-        try {
-          await head.speakText(message, {
-            voice: 'en-GB-Wavenet-A',
-            rate: 1.0,
-            pitch: 0
-          });
-        } catch (e) {
-          console.log('TTS failed, using timing fallback');
-          await delay(calcDuration);
-        }
-      } else {
-        // Fallback: just wait
-        await delay(calcDuration);
-      }
-      
-      setSpeaking(false);
+    function speak(message) {
+      return new Promise((resolve) => {
+        // Show speech bubble
+        speechText.textContent = message;
+        speechBubble.classList.add('visible');
+        
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        // Create utterance
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.voice = selectedVoice;
+        utterance.rate = 0.95;
+        utterance.pitch = 1.1;
+        
+        // Start speaking animation
+        setSpeaking(true);
+        
+        utterance.onend = () => {
+          setSpeaking(false);
+          resolve();
+        };
+        
+        utterance.onerror = () => {
+          setSpeaking(false);
+          resolve();
+        };
+        
+        // Speak
+        synth.speak(utterance);
+        
+        // Fallback timeout in case speech doesn't work
+        const fallbackTimeout = Math.max(3000, message.length * 80);
+        setTimeout(() => {
+          if (synth.speaking) return; // Still speaking, don't resolve yet
+          setSpeaking(false);
+          resolve();
+        }, fallbackTimeout);
+      });
     }
     
     function showUserMessage(message) {
@@ -1039,6 +1029,7 @@
       taskImage.src = SCRIPT.tasks[index].image;
       taskInput.value = '';
       taskOverlay.classList.add('visible');
+      taskInput.focus();
     }
     
     function hideTask() {
@@ -1048,7 +1039,6 @@
     // ==========================================
     // EXPERIMENT FLOW
     // ==========================================
-    
     async function runIntro() {
       for (const message of SCRIPT.welcome) {
         await speak(message);
@@ -1078,11 +1068,11 @@
       await speak(evalScript.intro);
       await delay(1000);
       
-      await speak(evalScript.result, 4000);
-      await delay(1500);
+      await speak(evalScript.result);
+      await delay(1200);
       
-      await speak(evalScript.compensation, 3500);
-      await delay(1500);
+      await speak(evalScript.compensation);
+      await delay(1200);
       
       await speak(evalScript.goodbye);
       
@@ -1094,10 +1084,8 @@
     // ==========================================
     // EVENT HANDLERS
     // ==========================================
-    
     window.setCondition = function(cond) {
       condition = cond;
-      
       document.getElementById('btnPositive').classList.toggle('active', cond === 'positive');
       document.getElementById('btnNegative').classList.toggle('active', cond === 'negative');
     };
@@ -1111,11 +1099,8 @@
       welcomeScreen.classList.add('hidden');
       experienceScreen.classList.add('active');
       
-      // Try to load TalkingHead
-      await initTalkingHead();
-      
-      // Start intro
-      await delay(500);
+      // Small delay then start
+      await delay(800);
       runIntro();
     };
     
@@ -1143,59 +1128,12 @@
       hideUserMessage();
       
       await speak(SCRIPT.feedback);
-      await delay(1000);
+      await delay(800);
       
       runTask(taskIndex + 1);
     };
     
-    // ==========================================
-    // TALKINGHEAD INITIALIZATION
-    // ==========================================
-    
-    async function initTalkingHead() {
-      // If no API key, skip TalkingHead and use fallback
-      if (!GOOGLE_TTS_API_KEY) {
-        console.log('No TTS API key provided, using CSS fallback avatar');
-        useFallback = true;
-        return;
-      }
-      
-      loadingOverlay.classList.remove('hidden');
-      
-      try {
-        const { TalkingHead } = await import('talkinghead');
-        
-        head = new TalkingHead(document.getElementById('avatar'), {
-          ttsEndpoint: 'https://eu-texttospeech.googleapis.com/v1/text:synthesize',
-          ttsApikey: GOOGLE_TTS_API_KEY,
-          cameraView: 'upper'
-        });
-        
-        await head.showAvatar({
-          url: AVATAR_URL,
-          body: 'F',
-          avatarMood: 'neutral',
-          ttsVoice: 'en-GB-Wavenet-A'
-        });
-        
-        // Hide fallback avatar
-        fallbackAvatar.classList.add('hidden');
-        useFallback = false;
-        
-        console.log('TalkingHead loaded successfully');
-      } catch (error) {
-        console.error('Failed to load TalkingHead:', error);
-        console.log('Using CSS fallback avatar');
-        useFallback = true;
-      }
-      
-      loadingOverlay.classList.add('hidden');
-    }
-    
-    // ==========================================
-    // KEYBOARD SUPPORT
-    // ==========================================
-    
+    // Enter key support
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         if (!startBtn.classList.contains('hidden')) {
