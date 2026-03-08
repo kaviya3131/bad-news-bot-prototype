@@ -4,12 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Embodied CA - Bad News Bot Study</title>
+  
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -26,7 +23,7 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
-      background: linear-gradient(to bottom, #1e293b, #0f172a);
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     }
     
     #welcomeScreen.hidden { display: none; }
@@ -35,12 +32,13 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 16px;
-      background: rgba(255,255,255,0.1);
+      padding: 8px 18px;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.3);
       border-radius: 999px;
-      color: rgba(255,255,255,0.8);
-      font-size: 12px;
-      margin-bottom: 16px;
+      color: #93c5fd;
+      font-size: 13px;
+      margin-bottom: 20px;
     }
     
     .badge-dot {
@@ -52,92 +50,100 @@
     }
     
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
     }
     
     .welcome-title {
       color: white;
-      font-size: 28px;
-      font-weight: 300;
+      font-size: 32px;
+      font-weight: 600;
       margin-bottom: 8px;
+      text-align: center;
     }
     
     .welcome-subtitle {
       color: #94a3b8;
-      font-size: 14px;
-      margin-bottom: 32px;
+      font-size: 15px;
+      margin-bottom: 36px;
     }
     
     .avatar-preview {
-      width: 260px;
-      height: 300px;
-      border-radius: 16px;
-      margin-bottom: 24px;
+      width: 300px;
+      height: 340px;
+      border-radius: 20px;
+      margin-bottom: 28px;
       overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-      position: relative;
+      box-shadow: 0 30px 60px -15px rgba(0,0,0,0.5);
+      background: linear-gradient(180deg, #fcd34d 0%, #fb923c 30%, #f472b6 60%, #a78bfa 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      text-align: center;
+      padding: 20px;
     }
     
     .condition-buttons {
       display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
+      gap: 14px;
+      margin-bottom: 28px;
     }
     
     .condition-btn {
-      padding: 10px 20px;
+      padding: 12px 24px;
       border-radius: 999px;
       font-size: 14px;
-      font-weight: 500;
-      border: none;
+      font-weight: 600;
+      border: 2px solid transparent;
       cursor: pointer;
-      transition: all 0.2s;
-      background: rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.6);
+      transition: all 0.25s ease;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.5);
     }
     
-    .condition-btn:hover { background: rgba(255,255,255,0.2); }
+    .condition-btn:hover {
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.8);
+    }
     
     .condition-btn.positive.active {
-      background: #10b981;
-      color: white;
-      box-shadow: 0 10px 25px -5px rgba(16,185,129,0.4);
+      background: rgba(16,185,129,0.2);
+      border-color: #10b981;
+      color: #34d399;
     }
     
     .condition-btn.negative.active {
-      background: #f43f5e;
-      color: white;
-      box-shadow: 0 10px 25px -5px rgba(244,63,94,0.4);
+      background: rgba(244,63,94,0.2);
+      border-color: #f43f5e;
+      color: #fb7185;
     }
     
     .start-btn {
-      padding: 14px 48px;
-      background: #3b82f6;
+      padding: 16px 56px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
       border: none;
       border-radius: 999px;
-      font-size: 16px;
-      font-weight: 500;
+      font-size: 17px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 10px 25px -5px rgba(59,130,246,0.4);
+      transition: all 0.25s ease;
+      box-shadow: 0 12px 30px -8px rgba(59,130,246,0.5);
     }
     
     .start-btn:hover {
-      background: #2563eb;
-      transform: scale(1.05);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px -8px rgba(59,130,246,0.6);
     }
     
-    .voice-note {
-      margin-top: 16px;
-      padding: 12px 20px;
-      background: rgba(59,130,246,0.1);
-      border-radius: 12px;
-      color: #93c5fd;
+    .info-text {
+      margin-top: 20px;
+      color: #64748b;
       font-size: 12px;
-      max-width: 300px;
       text-align: center;
+      max-width: 280px;
     }
     
     /* ==================== EXPERIENCE SCREEN ==================== */
@@ -145,431 +151,200 @@
       display: none;
       flex-direction: column;
       height: 100vh;
+      height: 100dvh;
     }
     
     #experienceScreen.active { display: flex; }
     
-    /* Header */
     .header {
-      background: #334155;
-      padding: 12px 16px;
+      background: linear-gradient(180deg, rgba(30,41,59,0.98), rgba(30,41,59,0.95));
+      backdrop-filter: blur(10px);
+      padding: 14px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       flex-shrink: 0;
+      z-index: 100;
     }
     
     .header-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
     
     .status-dot {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: #4ade80;
-      transition: background 0.3s;
+      box-shadow: 0 0 8px rgba(74,222,128,0.5);
+      transition: all 0.3s;
     }
     
     .status-dot.speaking {
       background: #60a5fa;
+      box-shadow: 0 0 12px rgba(96,165,250,0.6);
       animation: pulse 0.8s infinite;
     }
     
     .header-name {
       color: white;
-      font-weight: 500;
+      font-weight: 600;
+      font-size: 16px;
     }
     
     .condition-badge {
-      padding: 4px 12px;
+      padding: 6px 14px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .condition-badge.positive {
-      background: rgba(16,185,129,0.2);
+      background: rgba(16,185,129,0.15);
       color: #34d399;
+      border: 1px solid rgba(16,185,129,0.3);
     }
     
     .condition-badge.negative {
-      background: rgba(244,63,94,0.2);
+      background: rgba(244,63,94,0.15);
       color: #fb7185;
+      border: 1px solid rgba(244,63,94,0.3);
     }
     
     /* ==================== AVATAR CONTAINER ==================== */
     .avatar-container {
       flex: 1;
       position: relative;
-      background: linear-gradient(180deg, #fcd34d 0%, #fb923c 25%, #f472b6 50%, #a78bfa 75%, #60a5fa 100%);
+      background: linear-gradient(180deg, 
+        #fcd34d 0%, 
+        #fb923c 20%, 
+        #f472b6 45%, 
+        #c084fc 70%,
+        #60a5fa 100%
+      );
       overflow: hidden;
       min-height: 0;
     }
     
-    /* Avatar Figure */
-    .avatar-wrapper {
+    #avatarCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
       position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
+      inset: 0;
+      background: rgba(15,23,42,0.92);
+      backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      z-index: 200;
+      transition: opacity 0.5s;
     }
     
-    .avatar-head {
-      position: relative;
-      width: 130px;
-      height: 160px;
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
     
-    /* Hair */
-    .hair-back {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 150px;
-      height: 110px;
-      background: linear-gradient(180deg, #92400e 0%, #78350f 100%);
-      border-radius: 75px 75px 0 0;
-      z-index: 1;
-    }
-    
-    .hair-side {
-      position: absolute;
-      top: 70px;
+    .loading-spinner {
       width: 50px;
-      height: 160px;
-      background: linear-gradient(180deg, #92400e 0%, #78350f 100%);
-      border-radius: 0 0 25px 25px;
-      z-index: 2;
-    }
-    
-    .hair-side.left {
-      left: -28px;
-      transform: rotate(-8deg);
-    }
-    
-    .hair-side.right {
-      right: -28px;
-      transform: rotate(8deg);
-    }
-    
-    /* Face */
-    .face {
-      position: absolute;
-      top: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 115px;
-      height: 145px;
-      background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
-      border-radius: 50% 50% 45% 45%;
-      z-index: 10;
-      box-shadow: inset 0 -10px 20px rgba(0,0,0,0.05);
-    }
-    
-    /* Eyes */
-    .eyes {
-      position: absolute;
-      top: 55px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 35px;
-    }
-    
-    .eye {
-      width: 18px;
-      height: 18px;
-      background: white;
+      height: 50px;
+      border: 3px solid rgba(59,130,246,0.2);
+      border-top-color: #3b82f6;
       border-radius: 50%;
-      position: relative;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
     }
     
-    .eye-iris {
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 12px;
-      height: 12px;
-      background: radial-gradient(circle at 30% 30%, #059669, #047857);
-      border-radius: 50%;
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .loading-text {
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
     }
     
-    .eye-pupil {
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 5px;
-      height: 5px;
-      background: #000;
-      border-radius: 50%;
-    }
-    
-    .eye-highlight {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      width: 3px;
-      height: 3px;
-      background: white;
-      border-radius: 50%;
-    }
-    
-    /* Eyebrows */
-    .eyebrows {
-      position: absolute;
-      top: 42px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 50px;
-    }
-    
-    .eyebrow {
-      width: 22px;
-      height: 4px;
-      background: #78350f;
-      border-radius: 2px;
-    }
-    
-    .eyebrow.left { transform: rotate(-5deg); }
-    .eyebrow.right { transform: rotate(5deg); }
-    
-    /* Nose */
-    .nose {
-      position: absolute;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 8px;
-      height: 18px;
-      background: linear-gradient(180deg, transparent 0%, rgba(217,119,6,0.15) 100%);
-      border-radius: 4px;
-    }
-    
-    /* Mouth */
-    .mouth {
-      position: absolute;
-      top: 108px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 28px;
-      height: 10px;
-      background: #f87171;
-      border-radius: 15px;
-      transition: all 0.15s ease;
-    }
-    
-    .mouth.speaking {
-      animation: talk 0.25s infinite;
-    }
-    
-    @keyframes talk {
-      0%, 100% { 
-        height: 8px; 
-        width: 26px;
-        border-radius: 15px;
-      }
-      25% { 
-        height: 16px; 
-        width: 22px;
-        border-radius: 50%;
-      }
-      50% { 
-        height: 10px; 
-        width: 30px;
-        border-radius: 20px;
-      }
-      75% { 
-        height: 18px; 
-        width: 20px;
-        border-radius: 50%;
-      }
-    }
-    
-    /* Cheeks */
-    .cheeks {
-      position: absolute;
-      top: 85px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      display: flex;
-      justify-content: space-between;
-    }
-    
-    .cheek {
-      width: 20px;
-      height: 12px;
-      background: rgba(254,202,202,0.5);
-      border-radius: 50%;
-      filter: blur(3px);
-    }
-    
-    /* Ears */
-    .ear {
-      position: absolute;
-      top: 75px;
-      width: 14px;
-      height: 24px;
-      background: #fde68a;
-      border-radius: 50%;
-      z-index: 5;
-    }
-    
-    .ear.left { left: -5px; }
-    .ear.right { right: -5px; }
-    
-    /* Earrings */
-    .earring {
-      position: absolute;
-      top: 95px;
-      width: 10px;
-      height: 10px;
-      background: linear-gradient(135deg, #fcd34d, #f59e0b);
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      z-index: 6;
-    }
-    
-    .earring.left { left: -3px; }
-    .earring.right { right: -3px; }
-    
-    /* Neck */
-    .neck {
-      width: 55px;
-      height: 35px;
-      background: linear-gradient(180deg, #fde68a 0%, #fcd34d 100%);
-      margin-top: -8px;
-      z-index: 8;
-    }
-    
-    /* Shoulders */
-    .shoulders {
-      width: 260px;
-      height: 140px;
-      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-      border-radius: 90px 90px 0 0;
-      margin-top: -12px;
-      position: relative;
-      z-index: 7;
-      box-shadow: inset 0 5px 15px rgba(0,0,0,0.05);
-    }
-    
-    .collar {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 70px;
-      height: 20px;
-      background: #f8fafc;
-      border-radius: 0 0 35px 35px;
+    .loading-subtext {
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 8px;
     }
     
     /* ==================== SPEECH BUBBLE ==================== */
     .speech-bubble {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      left: 16px;
-      max-width: 320px;
+      top: 20px;
+      right: 20px;
+      left: 20px;
+      max-width: 380px;
       margin-left: auto;
       background: white;
       border-radius: 20px;
-      padding: 14px 18px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      padding: 16px 20px;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.2);
       opacity: 0;
-      transform: translateY(-10px);
-      transition: all 0.3s ease;
+      transform: translateY(-15px) scale(0.95);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 100;
     }
     
     .speech-bubble.visible {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
     
     .speech-bubble p {
-      font-size: 14px;
+      font-size: 15px;
       color: #1e293b;
-      line-height: 1.6;
-    }
-    
-    /* ==================== SPEAKING INDICATOR ==================== */
-    .speaking-indicator {
-      position: absolute;
-      bottom: 150px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 6px;
-      background: white;
-      padding: 10px 18px;
-      border-radius: 999px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 50;
-    }
-    
-    .speaking-indicator.visible { opacity: 1; }
-    
-    .speaking-dot {
-      width: 8px;
-      height: 8px;
-      background: #3b82f6;
-      border-radius: 50%;
-      animation: bounce 1s infinite;
-    }
-    
-    .speaking-dot:nth-child(2) { animation-delay: 0.15s; }
-    .speaking-dot:nth-child(3) { animation-delay: 0.3s; }
-    
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+      line-height: 1.65;
     }
     
     /* ==================== PROGRESS BADGE ==================== */
     .progress-badge {
       position: absolute;
-      top: 16px;
-      left: 16px;
-      background: #3b82f6;
+      top: 20px;
+      left: 20px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
-      padding: 8px 16px;
+      padding: 10px 20px;
       border-radius: 999px;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
-      box-shadow: 0 4px 15px rgba(59,130,246,0.4);
+      box-shadow: 0 8px 25px rgba(59,130,246,0.4);
       opacity: 0;
-      transition: opacity 0.3s;
+      transform: scale(0.8);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 100;
     }
     
-    .progress-badge.visible { opacity: 1; }
+    .progress-badge.visible { 
+      opacity: 1; 
+      transform: scale(1);
+    }
     
     /* ==================== TASK OVERLAY ==================== */
     .task-overlay {
       position: absolute;
-      bottom: 100px;
-      right: 16px;
-      width: 200px;
+      bottom: 110px;
+      right: 20px;
+      width: 220px;
       background: white;
-      border-radius: 20px;
+      border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
       opacity: 0;
-      transform: translateY(20px) scale(0.95);
-      transition: all 0.3s ease;
+      transform: translateY(30px) scale(0.9);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       z-index: 100;
     }
     
@@ -580,110 +355,125 @@
     
     .task-image {
       width: 100%;
-      height: 130px;
+      height: 140px;
       object-fit: cover;
       display: block;
     }
     
     .task-input-area {
-      padding: 14px;
+      padding: 16px;
     }
     
     .task-input {
       width: 100%;
-      padding: 12px 16px;
+      padding: 14px 18px;
       border: 2px solid #e2e8f0;
       border-radius: 999px;
-      font-size: 14px;
-      margin-bottom: 10px;
+      font-size: 15px;
+      margin-bottom: 12px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
     }
     
     .task-input:focus {
       border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
     }
     
     .task-submit {
       width: 100%;
-      padding: 12px;
-      background: #3b82f6;
+      padding: 14px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
       border: none;
       border-radius: 999px;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
     }
     
-    .task-submit:hover { background: #2563eb; }
+    .task-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.35);
+    }
     
     /* ==================== USER BUBBLE ==================== */
     .user-bubble {
       position: absolute;
-      bottom: 100px;
-      left: 16px;
-      background: #3b82f6;
+      bottom: 110px;
+      left: 20px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
-      padding: 12px 18px;
+      padding: 14px 20px;
       border-radius: 20px;
       border-bottom-left-radius: 6px;
-      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+      box-shadow: 0 8px 30px rgba(59,130,246,0.4);
       opacity: 0;
-      transition: opacity 0.3s;
+      transform: translateY(10px);
+      transition: all 0.3s;
       z-index: 100;
     }
     
-    .user-bubble.visible { opacity: 1; }
+    .user-bubble.visible { 
+      opacity: 1; 
+      transform: translateY(0);
+    }
     
-    .user-bubble p { font-size: 14px; }
+    .user-bubble p { font-size: 15px; }
     
     /* ==================== BOTTOM INPUT ==================== */
     .input-area {
-      background: #334155;
-      padding: 16px;
+      background: linear-gradient(180deg, rgba(30,41,59,0.95), rgba(30,41,59,0.98));
+      backdrop-filter: blur(10px);
+      padding: 18px 20px;
+      padding-bottom: max(18px, env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(255,255,255,0.08);
       flex-shrink: 0;
     }
     
     .action-btn {
       width: 100%;
-      padding: 16px;
-      background: #3b82f6;
+      padding: 18px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: white;
       border: none;
       border-radius: 999px;
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+      transition: all 0.25s;
+      box-shadow: 0 8px 30px rgba(59,130,246,0.35);
     }
     
-    .action-btn:hover { background: #2563eb; }
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(59,130,246,0.45);
+    }
+    
     .action-btn.hidden { display: none; }
     
     .input-row {
       display: flex;
-      gap: 12px;
+      gap: 14px;
     }
     
     .input-row.hidden { display: none; }
     
     .message-input {
       flex: 1;
-      padding: 16px 20px;
-      background: #475569;
-      border: none;
+      padding: 18px 24px;
+      background: rgba(71,85,105,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
       border-radius: 999px;
       color: #94a3b8;
-      font-size: 14px;
+      font-size: 15px;
     }
     
     .send-btn {
-      width: 52px;
-      height: 52px;
-      background: rgba(59,130,246,0.5);
+      width: 56px;
+      height: 56px;
+      background: rgba(59,130,246,0.4);
       border: none;
       border-radius: 50%;
       display: flex;
@@ -693,16 +483,17 @@
     }
     
     .send-btn svg {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       fill: white;
+      opacity: 0.6;
     }
     
     .completion-text {
       text-align: center;
       color: #94a3b8;
-      font-size: 14px;
-      padding: 16px;
+      font-size: 15px;
+      padding: 18px;
     }
     
     .completion-text.hidden { display: none; }
@@ -714,54 +505,36 @@
   <div id="welcomeScreen">
     <div class="badge">
       <span class="badge-dot"></span>
-      Embodied Conversational Agent
+      3D Embodied Conversational Agent
     </div>
     <h1 class="welcome-title">Bad News Bot Study</h1>
     <p class="welcome-subtitle">Prototype for Funding Proposal</p>
     
-    <!-- Avatar Preview -->
     <div class="avatar-preview">
-      <div style="width:100%;height:100%;background:linear-gradient(180deg,#fcd34d 0%,#fb923c 30%,#f472b6 60%,#a78bfa 100%);display:flex;align-items:flex-end;justify-content:center;">
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="position:relative;width:100px;height:120px;">
-            <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:115px;height:85px;background:linear-gradient(180deg,#92400e,#78350f);border-radius:60px 60px 0 0;"></div>
-            <div style="position:absolute;top:55px;left:-20px;width:38px;height:120px;background:linear-gradient(180deg,#92400e,#78350f);border-radius:0 0 20px 20px;transform:rotate(-8deg);"></div>
-            <div style="position:absolute;top:55px;right:-20px;width:38px;height:120px;background:linear-gradient(180deg,#92400e,#78350f);border-radius:0 0 20px 20px;transform:rotate(8deg);"></div>
-            <div style="position:absolute;top:22px;left:50%;transform:translateX(-50%);width:88px;height:110px;background:linear-gradient(180deg,#fef3c7,#fde68a);border-radius:50% 50% 45% 45%;z-index:10;">
-              <div style="position:absolute;top:42px;left:50%;transform:translateX(-50%);display:flex;gap:28px;">
-                <div style="width:14px;height:14px;background:white;border-radius:50%;position:relative;">
-                  <div style="position:absolute;top:2px;left:2px;width:10px;height:10px;background:#059669;border-radius:50%;"></div>
-                </div>
-                <div style="width:14px;height:14px;background:white;border-radius:50%;position:relative;">
-                  <div style="position:absolute;top:2px;left:2px;width:10px;height:10px;background:#059669;border-radius:50%;"></div>
-                </div>
-              </div>
-              <div style="position:absolute;top:82px;left:50%;transform:translateX(-50%);width:22px;height:8px;background:#f87171;border-radius:10px;"></div>
-            </div>
-          </div>
-          <div style="width:42px;height:25px;background:#fde68a;margin-top:-6px;"></div>
-          <div style="width:200px;height:100px;background:linear-gradient(180deg,#f8fafc,#e2e8f0);border-radius:70px 70px 0 0;margin-top:-8px;"></div>
-        </div>
+      <div>
+        <div style="font-size: 48px; margin-bottom: 12px;">👩‍💼</div>
+        <div style="font-weight: 600; margin-bottom: 6px;">Catherine</div>
+        <div style="font-size: 12px; opacity: 0.8;">3D Avatar will load when you start</div>
       </div>
     </div>
     
     <div class="condition-buttons">
-      <button class="condition-btn positive" id="btnPositive" onclick="setCondition('positive')">
+      <button class="condition-btn positive" id="btnPositive">
         ✓ Positive Anchor
       </button>
-      <button class="condition-btn negative active" id="btnNegative" onclick="setCondition('negative')">
+      <button class="condition-btn negative active" id="btnNegative">
         ✗ Negative Anchor
       </button>
     </div>
     
-    <button class="start-btn" onclick="startExperience()">
+    <button class="start-btn" id="startButton">
       Start Experience
     </button>
     
-    <div class="voice-note">
+    <p class="info-text">
       🔊 Uses browser's built-in voice synthesis<br>
-      <small>No API key required!</small>
-    </div>
+      🎭 3D Avatar powered by TalkingHead
+    </p>
   </div>
 
   <!-- ==================== EXPERIENCE SCREEN ==================== -->
@@ -775,54 +548,14 @@
     </div>
     
     <div class="avatar-container">
-      <!-- Avatar -->
-      <div class="avatar-wrapper">
-        <div class="avatar-head">
-          <div class="hair-back"></div>
-          <div class="hair-side left"></div>
-          <div class="hair-side right"></div>
-          <div class="face">
-            <div class="eyebrows">
-              <div class="eyebrow left"></div>
-              <div class="eyebrow right"></div>
-            </div>
-            <div class="eyes">
-              <div class="eye">
-                <div class="eye-iris">
-                  <div class="eye-pupil"></div>
-                  <div class="eye-highlight"></div>
-                </div>
-              </div>
-              <div class="eye">
-                <div class="eye-iris">
-                  <div class="eye-pupil"></div>
-                  <div class="eye-highlight"></div>
-                </div>
-              </div>
-            </div>
-            <div class="nose"></div>
-            <div class="mouth" id="mouth"></div>
-            <div class="cheeks">
-              <div class="cheek"></div>
-              <div class="cheek"></div>
-            </div>
-          </div>
-          <div class="ear left"></div>
-          <div class="ear right"></div>
-          <div class="earring left"></div>
-          <div class="earring right"></div>
-        </div>
-        <div class="neck"></div>
-        <div class="shoulders">
-          <div class="collar"></div>
-        </div>
-      </div>
+      <!-- TalkingHead renders here -->
+      <div id="avatarCanvas"></div>
       
-      <!-- Speaking Indicator -->
-      <div class="speaking-indicator" id="speakingIndicator">
-        <div class="speaking-dot"></div>
-        <div class="speaking-dot"></div>
-        <div class="speaking-dot"></div>
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Catherine...</div>
+        <div class="loading-subtext" id="loadingSubtext">Preparing 3D avatar</div>
       </div>
       
       <!-- Speech Bubble -->
@@ -838,7 +571,7 @@
         <img class="task-image" id="taskImage" src="" alt="Task">
         <div class="task-input-area">
           <input type="text" class="task-input" id="taskInput" placeholder="e.g. 85%">
-          <button class="task-submit" onclick="submitTask()">Submit</button>
+          <button class="task-submit" id="taskSubmitBtn">Submit</button>
         </div>
       </div>
       
@@ -849,7 +582,7 @@
     </div>
     
     <div class="input-area">
-      <button class="action-btn hidden" id="startBtn" onclick="handleUserReady()">
+      <button class="action-btn hidden" id="startBtn">
         Ok, start 👍
       </button>
       <div class="input-row" id="inputRow">
@@ -864,7 +597,34 @@
     </div>
   </div>
 
+  <!-- Load TalkingHead as module -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js/+esm",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.2/modules/talkinghead.mjs"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { TalkingHead } from 'talkinghead';
+    
+    // Expose TalkingHead to window for the main script
+    window.TalkingHead = TalkingHead;
+    window.talkingHeadLoaded = true;
+    
+    // Dispatch event when ready
+    window.dispatchEvent(new Event('talkinghead-ready'));
+  </script>
+
   <script>
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    const AVATAR_URL = 'https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png';
+    
     // ==========================================
     // SCRIPT DATA
     // ==========================================
@@ -906,10 +666,13 @@
     // ==========================================
     let condition = 'negative';
     let taskIndex = 0;
+    let head = null;
     let synth = window.speechSynthesis;
     let selectedVoice = null;
     
-    // DOM Elements
+    // ==========================================
+    // DOM ELEMENTS
+    // ==========================================
     const welcomeScreen = document.getElementById('welcomeScreen');
     const experienceScreen = document.getElementById('experienceScreen');
     const statusDot = document.getElementById('statusDot');
@@ -925,15 +688,14 @@
     const startBtn = document.getElementById('startBtn');
     const inputRow = document.getElementById('inputRow');
     const completionText = document.getElementById('completionText');
-    const speakingIndicator = document.getElementById('speakingIndicator');
-    const mouth = document.getElementById('mouth');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingSubtext = document.getElementById('loadingSubtext');
     
     // ==========================================
     // VOICE SETUP
     // ==========================================
     function loadVoices() {
       const voices = synth.getVoices();
-      // Try to find a good female English voice
       selectedVoice = voices.find(v => v.name.includes('Female') && v.lang.startsWith('en')) ||
                       voices.find(v => v.name.includes('Samantha')) ||
                       voices.find(v => v.name.includes('Victoria')) ||
@@ -944,7 +706,6 @@
       console.log('Selected voice:', selectedVoice?.name);
     }
     
-    // Load voices when available
     if (synth.onvoiceschanged !== undefined) {
       synth.onvoiceschanged = loadVoices;
     }
@@ -956,34 +717,33 @@
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     
     function setSpeaking(isSpeaking) {
-      if (isSpeaking) {
-        statusDot.classList.add('speaking');
-        speakingIndicator.classList.add('visible');
-        mouth.classList.add('speaking');
-      } else {
-        statusDot.classList.remove('speaking');
-        speakingIndicator.classList.remove('visible');
-        mouth.classList.remove('speaking');
-      }
+      statusDot.classList.toggle('speaking', isSpeaking);
     }
     
-    function speak(message) {
-      return new Promise((resolve) => {
-        // Show speech bubble
+    async function speak(message) {
+      return new Promise(async (resolve) => {
         speechText.textContent = message;
         speechBubble.classList.add('visible');
-        
-        // Cancel any ongoing speech
         synth.cancel();
+        setSpeaking(true);
         
-        // Create utterance
+        // Try TalkingHead first
+        if (head) {
+          try {
+            await head.speakText(message, { lang: 'en', rate: 0.95, pitch: 1.1 });
+            setSpeaking(false);
+            resolve();
+            return;
+          } catch (e) {
+            console.log('TalkingHead TTS failed, using browser fallback');
+          }
+        }
+        
+        // Browser Web Speech API fallback
         const utterance = new SpeechSynthesisUtterance(message);
         utterance.voice = selectedVoice;
         utterance.rate = 0.95;
         utterance.pitch = 1.1;
-        
-        // Start speaking animation
-        setSpeaking(true);
         
         utterance.onend = () => {
           setSpeaking(false);
@@ -995,16 +755,15 @@
           resolve();
         };
         
-        // Speak
         synth.speak(utterance);
         
-        // Fallback timeout in case speech doesn't work
-        const fallbackTimeout = Math.max(3000, message.length * 80);
+        // Fallback timeout
         setTimeout(() => {
-          if (synth.speaking) return; // Still speaking, don't resolve yet
-          setSpeaking(false);
-          resolve();
-        }, fallbackTimeout);
+          if (!synth.speaking) {
+            setSpeaking(false);
+            resolve();
+          }
+        }, Math.max(3000, message.length * 80));
       });
     }
     
@@ -1029,11 +788,65 @@
       taskImage.src = SCRIPT.tasks[index].image;
       taskInput.value = '';
       taskOverlay.classList.add('visible');
-      taskInput.focus();
+      setTimeout(() => taskInput.focus(), 400);
     }
     
     function hideTask() {
       taskOverlay.classList.remove('visible');
+    }
+    
+    // ==========================================
+    // AVATAR INITIALIZATION
+    // ==========================================
+    async function initAvatar() {
+      // Wait for TalkingHead module to load
+      if (!window.talkingHeadLoaded) {
+        await new Promise(resolve => {
+          window.addEventListener('talkinghead-ready', resolve, { once: true });
+          // Timeout fallback
+          setTimeout(resolve, 5000);
+        });
+      }
+      
+      if (!window.TalkingHead) {
+        console.log('TalkingHead not available, using voice-only mode');
+        loadingSubtext.textContent = 'Using voice-only mode';
+        setTimeout(() => loadingOverlay.classList.add('hidden'), 1500);
+        return false;
+      }
+      
+      try {
+        console.log('Initializing TalkingHead...');
+        
+        head = new window.TalkingHead(document.getElementById('avatarCanvas'), {
+          ttsLang: 'en-GB',
+          cameraView: 'upper',
+          cameraDistance: 0.6
+        });
+        
+        console.log('Loading avatar...');
+        await head.showAvatar({
+          url: AVATAR_URL,
+          body: 'F',
+          avatarMood: 'neutral',
+          lipsyncLang: 'en'
+        }, (ev) => {
+          if (ev.lengthComputable) {
+            const pct = Math.round((ev.loaded / ev.total) * 100);
+            loadingSubtext.textContent = `Loading: ${pct}%`;
+          }
+        });
+        
+        console.log('Avatar loaded!');
+        head.setMood('neutral');
+        loadingOverlay.classList.add('hidden');
+        return true;
+      } catch (error) {
+        console.error('Failed to load avatar:', error);
+        loadingSubtext.textContent = 'Avatar unavailable - voice only';
+        setTimeout(() => loadingOverlay.classList.add('hidden'), 2000);
+        return false;
+      }
     }
     
     // ==========================================
@@ -1045,7 +858,6 @@
         await delay(800);
       }
       
-      // Show start button
       startBtn.classList.remove('hidden');
       inputRow.classList.add('hidden');
     }
@@ -1076,7 +888,6 @@
       
       await speak(evalScript.goodbye);
       
-      // Show completion
       inputRow.classList.add('hidden');
       completionText.classList.remove('hidden');
     }
@@ -1084,27 +895,25 @@
     // ==========================================
     // EVENT HANDLERS
     // ==========================================
-    window.setCondition = function(cond) {
+    function setCondition(cond) {
       condition = cond;
       document.getElementById('btnPositive').classList.toggle('active', cond === 'positive');
       document.getElementById('btnNegative').classList.toggle('active', cond === 'negative');
-    };
+    }
     
-    window.startExperience = async function() {
-      // Update condition badge
+    async function startExperience() {
       conditionBadge.textContent = condition === 'positive' ? 'Positive' : 'Negative';
       conditionBadge.className = `condition-badge ${condition}`;
       
-      // Switch screens
       welcomeScreen.classList.add('hidden');
       experienceScreen.classList.add('active');
       
-      // Small delay then start
-      await delay(800);
+      await initAvatar();
+      await delay(500);
       runIntro();
-    };
+    }
     
-    window.handleUserReady = async function() {
+    async function handleUserReady() {
       startBtn.classList.add('hidden');
       inputRow.classList.remove('hidden');
       
@@ -1113,9 +922,9 @@
       hideUserMessage();
       
       runTask(0);
-    };
+    }
     
-    window.submitTask = async function() {
+    async function submitTask() {
       const value = taskInput.value.trim();
       if (!value) return;
       
@@ -1131,7 +940,16 @@
       await delay(800);
       
       runTask(taskIndex + 1);
-    };
+    }
+    
+    // ==========================================
+    // ATTACH EVENT LISTENERS
+    // ==========================================
+    document.getElementById('btnPositive').addEventListener('click', () => setCondition('positive'));
+    document.getElementById('btnNegative').addEventListener('click', () => setCondition('negative'));
+    document.getElementById('startButton').addEventListener('click', startExperience);
+    document.getElementById('startBtn').addEventListener('click', handleUserReady);
+    document.getElementById('taskSubmitBtn').addEventListener('click', submitTask);
     
     // Enter key support
     document.addEventListener('keydown', (e) => {
