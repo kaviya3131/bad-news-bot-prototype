@@ -103,18 +103,4 @@ tasks: [
 - [Ready Player Me](https://readyplayer.me/) - Avatar creation
 - [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) - Voice synthesis
 
-## Research Context
 
-This prototype was developed for a research study at Saarland University investigating how digital agents affect emotional responses when delivering unfavorable messages.
-
-**Research Question**: How does the delivery of unfavorable messages by digital agents affect the emotional responses, perceptions, and behaviors of human recipients?
-
-## License
-
-MIT - Free for research and educational use.
-
-## Credits
-
-- Avatar: Ready Player Me
-- TalkingHead: [met4citizen](https://github.com/met4citizen/TalkingHead)
-- Research: Loan Ta Hong, Saarland University
