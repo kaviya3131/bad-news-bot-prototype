@@ -63,18 +63,8 @@
       50% { opacity: 0.5; }
     }
     
-    .welcome-title {
-      color: white;
-      font-size: 32px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    
-    .welcome-subtitle {
-      color: #94a3b8;
-      font-size: 15px;
-      margin-bottom: 32px;
-    }
+    .welcome-title { color: white; font-size: 32px; font-weight: 600; margin-bottom: 8px; }
+    .welcome-subtitle { color: #94a3b8; font-size: 15px; margin-bottom: 32px; }
     
     .avatar-preview {
       width: 300px;
@@ -87,11 +77,7 @@
       position: relative;
     }
     
-    #previewCanvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
+    #previewCanvas { width: 100%; height: 100%; display: block; }
     
     .loading-indicator {
       position: absolute;
@@ -119,11 +105,7 @@
     
     @keyframes spin { to { transform: rotate(360deg); } }
     
-    .condition-buttons {
-      display: flex;
-      gap: 14px;
-      margin-bottom: 28px;
-    }
+    .condition-buttons { display: flex; gap: 14px; margin-bottom: 28px; }
     
     .condition-btn {
       padding: 12px 24px;
@@ -137,21 +119,9 @@
       color: rgba(255,255,255,0.5);
     }
     
-    .condition-btn:hover {
-      background: rgba(255,255,255,0.15);
-    }
-    
-    .condition-btn.positive.active {
-      background: rgba(16,185,129,0.2);
-      border-color: #10b981;
-      color: #34d399;
-    }
-    
-    .condition-btn.negative.active {
-      background: rgba(244,63,94,0.2);
-      border-color: #f43f5e;
-      color: #fb7185;
-    }
+    .condition-btn:hover { background: rgba(255,255,255,0.15); }
+    .condition-btn.positive.active { background: rgba(16,185,129,0.2); border-color: #10b981; color: #34d399; }
+    .condition-btn.negative.active { background: rgba(244,63,94,0.2); border-color: #f43f5e; color: #fb7185; }
     
     .start-btn {
       padding: 16px 56px;
@@ -166,35 +136,13 @@
       box-shadow: 0 12px 30px rgba(59,130,246,0.4);
     }
     
-    .start-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-    }
+    .start-btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     
-    .start-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .info-text { margin-top: 20px; color: #64748b; font-size: 12px; text-align: center; }
+    #statusText { color: #94a3b8; font-size: 13px; margin-top: 12px; }
     
-    .info-text {
-      margin-top: 20px;
-      color: #64748b;
-      font-size: 12px;
-      text-align: center;
-    }
-    
-    #statusText {
-      color: #94a3b8;
-      font-size: 13px;
-      margin-top: 12px;
-    }
-    
-    #experienceScreen {
-      display: none;
-      flex-direction: column;
-      height: 100vh;
-      height: 100dvh;
-    }
-    
+    #experienceScreen { display: none; flex-direction: column; height: 100vh; height: 100dvh; }
     #experienceScreen.active { display: flex; }
     
     .header {
@@ -209,11 +157,7 @@
       z-index: 100;
     }
     
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
     
     .status-dot {
       width: 10px;
@@ -229,29 +173,11 @@
       animation: pulse 0.8s infinite;
     }
     
-    .header-name {
-      color: white;
-      font-weight: 600;
-      font-size: 16px;
-    }
+    .header-name { color: white; font-weight: 600; font-size: 16px; }
     
-    .condition-badge {
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    
-    .condition-badge.positive {
-      background: rgba(16,185,129,0.15);
-      color: #34d399;
-    }
-    
-    .condition-badge.negative {
-      background: rgba(244,63,94,0.15);
-      color: #fb7185;
-    }
+    .condition-badge { padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .condition-badge.positive { background: rgba(16,185,129,0.15); color: #34d399; }
+    .condition-badge.negative { background: rgba(244,63,94,0.15); color: #fb7185; }
     
     .avatar-container {
       flex: 1;
@@ -261,11 +187,7 @@
       min-height: 0;
     }
     
-    #mainCanvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
+    #mainCanvas { width: 100%; height: 100%; display: block; }
     
     .speech-bubble {
       position: absolute;
@@ -284,16 +206,8 @@
       z-index: 100;
     }
     
-    .speech-bubble.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    
-    .speech-bubble p {
-      font-size: 15px;
-      color: #1e293b;
-      line-height: 1.6;
-    }
+    .speech-bubble.visible { opacity: 1; transform: translateY(0); }
+    .speech-bubble p { font-size: 15px; color: #1e293b; line-height: 1.6; }
     
     .progress-badge {
       position: absolute;
@@ -305,7 +219,6 @@
       border-radius: 999px;
       font-size: 15px;
       font-weight: 700;
-      box-shadow: 0 8px 25px rgba(59,130,246,0.4);
       opacity: 0;
       transition: opacity 0.3s;
       z-index: 100;
@@ -328,20 +241,9 @@
       z-index: 100;
     }
     
-    .task-overlay.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    
-    .task-image {
-      width: 100%;
-      height: 140px;
-      object-fit: cover;
-    }
-    
-    .task-input-area {
-      padding: 16px;
-    }
+    .task-overlay.visible { opacity: 1; transform: translateY(0); }
+    .task-image { width: 100%; height: 140px; object-fit: cover; }
+    .task-input-area { padding: 16px; }
     
     .task-input {
       width: 100%;
@@ -378,7 +280,6 @@
       padding: 12px 18px;
       border-radius: 18px;
       border-bottom-left-radius: 4px;
-      box-shadow: 0 8px 25px rgba(59,130,246,0.35);
       opacity: 0;
       transition: opacity 0.3s;
       z-index: 100;
@@ -410,7 +311,6 @@
     
     .action-btn:hover { background: #2563eb; }
     .action-btn.hidden { display: none; }
-    
     .input-row { display: flex; gap: 12px; }
     .input-row.hidden { display: none; }
     
@@ -435,20 +335,8 @@
       justify-content: center;
     }
     
-    .send-btn svg {
-      width: 22px;
-      height: 22px;
-      fill: white;
-      opacity: 0.6;
-    }
-    
-    .completion-text {
-      text-align: center;
-      color: #94a3b8;
-      font-size: 14px;
-      padding: 16px;
-    }
-    
+    .send-btn svg { width: 22px; height: 22px; fill: white; opacity: 0.6; }
+    .completion-text { text-align: center; color: #94a3b8; font-size: 14px; padding: 16px; }
     .completion-text.hidden { display: none; }
   </style>
 </head>
@@ -531,7 +419,7 @@
     import { TalkingHead } from 'talkinghead';
     
     // ==========================================
-    // CONFIG - UPDATE THIS WITH YOUR NGROK URL
+    // CONFIG - UPDATE NGROK URL HERE
     // ==========================================
     const TTS_API_URL = 'https://71a5-134-96-3-2.ngrok-free.app/tts';
     const AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
@@ -570,19 +458,14 @@
     let taskIndex = 0;
     let previewHead = null;
     let mainHead = null;
-    let audioContext = null;
     
     const $ = id => document.getElementById(id);
-    
-    // ==========================================
-    // HELPERS
-    // ==========================================
     const delay = ms => new Promise(r => setTimeout(r, ms));
     const setStatus = text => { $('statusText').textContent = text; };
     const setSpeaking = s => $('statusDot')?.classList.toggle('speaking', s);
     
     // ==========================================
-    // TTS + LIP-SYNC
+    // TTS + LIP-SYNC using TalkingHead's speakAudio
     // ==========================================
     async function speak(message) {
       $('speechText').textContent = message;
@@ -599,46 +482,34 @@
         
         if (!response.ok) throw new Error('TTS API error');
         
-        const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
+        // Get audio as ArrayBuffer
+        const audioBuffer = await response.arrayBuffer();
         
-        // Play audio and animate mouth
-        await playAudioWithLipSync(audioUrl);
-        
-        URL.revokeObjectURL(audioUrl);
+        if (mainHead) {
+          // Use TalkingHead's speakAudio for lip-sync
+          // This method handles audio playback + lip-sync together
+          await mainHead.speakAudio(audioBuffer, {
+            lipsyncLang: 'en'
+          });
+        } else {
+          // Fallback: play audio without avatar
+          const audioBlob = new Blob([audioBuffer], { type: 'audio/wav' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          await new Promise(resolve => {
+            audio.onended = resolve;
+            audio.onerror = resolve;
+            audio.play().catch(resolve);
+          });
+          URL.revokeObjectURL(audioUrl);
+        }
       } catch (error) {
         console.error('TTS Error:', error);
-        // Fallback: just wait based on text length
+        // Fallback: wait based on text length
         await delay(message.length * 60);
       }
       
       setSpeaking(false);
-    }
-    
-    async function playAudioWithLipSync(audioUrl) {
-      return new Promise((resolve) => {
-        const audio = new Audio(audioUrl);
-        
-        // Animate mouth while audio plays
-        const animateMouth = () => {
-          if (!audio.paused && !audio.ended && mainHead) {
-            const val = 0.2 + 0.3 * Math.sin(Date.now() / 80) + 0.2 * Math.sin(Date.now() / 120);
-            try { mainHead.setMorphTarget('mouthOpen', Math.max(0, val)); } catch(e) {}
-            requestAnimationFrame(animateMouth);
-          } else if (mainHead) {
-            try { mainHead.setMorphTarget('mouthOpen', 0); } catch(e) {}
-          }
-        };
-        
-        audio.onplay = animateMouth;
-        audio.onended = () => {
-          if (mainHead) try { mainHead.setMorphTarget('mouthOpen', 0); } catch(e) {}
-          resolve();
-        };
-        audio.onerror = () => resolve();
-        
-        audio.play().catch(() => resolve());
-      });
     }
     
     // ==========================================
