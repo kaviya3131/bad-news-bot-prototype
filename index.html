@@ -17,324 +17,66 @@
   
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      min-height: 100vh;
-      overflow: hidden;
-    }
-    
-    #welcomeScreen {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    }
-    
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; min-height: 100vh; overflow: hidden; }
+    #welcomeScreen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
     #welcomeScreen.hidden { display: none; }
-    
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 18px;
-      background: rgba(59,130,246,0.15);
-      border: 1px solid rgba(59,130,246,0.3);
-      border-radius: 999px;
-      color: #93c5fd;
-      font-size: 13px;
-      margin-bottom: 20px;
-    }
-    
-    .badge-dot {
-      width: 8px;
-      height: 8px;
-      background: #4ade80;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); border-radius: 999px; color: #93c5fd; font-size: 13px; margin-bottom: 20px; }
+    .badge-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .welcome-title { color: white; font-size: 32px; font-weight: 600; margin-bottom: 8px; }
     .welcome-subtitle { color: #94a3b8; font-size: 15px; margin-bottom: 32px; }
-    
-    .avatar-preview {
-      width: 300px;
-      height: 360px;
-      border-radius: 20px;
-      margin-bottom: 28px;
-      overflow: hidden;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-      background: linear-gradient(180deg, #fcd34d 0%, #fb923c 30%, #f472b6 60%, #a78bfa 100%);
-      position: relative;
-    }
-    
+    .avatar-preview { width: 300px; height: 360px; border-radius: 20px; margin-bottom: 28px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.4); background: linear-gradient(180deg, #fcd34d 0%, #fb923c 30%, #f472b6 60%, #a78bfa 100%); position: relative; }
     #previewCanvas { width: 100%; height: 100%; display: block; }
-    
-    .loading-indicator {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(4px);
-    }
-    
+    .loading-indicator { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
     .loading-indicator.hidden { display: none; }
-    
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255,255,255,0.2);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 12px;
-    }
-    
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    
     .condition-buttons { display: flex; gap: 14px; margin-bottom: 28px; }
-    
-    .condition-btn {
-      padding: 12px 24px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 600;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.5);
-    }
-    
+    .condition-btn { padding: 12px 24px; border-radius: 999px; font-size: 14px; font-weight: 600; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
     .condition-btn:hover { background: rgba(255,255,255,0.15); }
     .condition-btn.positive.active { background: rgba(16,185,129,0.2); border-color: #10b981; color: #34d399; }
     .condition-btn.negative.active { background: rgba(244,63,94,0.2); border-color: #f43f5e; color: #fb7185; }
-    
-    .start-btn {
-      padding: 16px 56px;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-size: 17px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 12px 30px rgba(59,130,246,0.4);
-    }
-    
+    .start-btn { padding: 16px 56px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 999px; font-size: 17px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 12px 30px rgba(59,130,246,0.4); }
     .start-btn:hover:not(:disabled) { transform: translateY(-2px); }
     .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    
     .info-text { margin-top: 20px; color: #64748b; font-size: 12px; text-align: center; }
     #statusText { color: #94a3b8; font-size: 13px; margin-top: 12px; }
-    
     #experienceScreen { display: none; flex-direction: column; height: 100vh; height: 100dvh; }
     #experienceScreen.active { display: flex; }
-    
-    .header {
-      background: rgba(30,41,59,0.95);
-      backdrop-filter: blur(10px);
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      flex-shrink: 0;
-      z-index: 100;
-    }
-    
+    .header { background: rgba(30,41,59,0.95); backdrop-filter: blur(10px); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; z-index: 100; }
     .header-left { display: flex; align-items: center; gap: 10px; }
-    
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #4ade80;
-      transition: all 0.3s;
-    }
-    
-    .status-dot.speaking {
-      background: #60a5fa;
-      box-shadow: 0 0 12px rgba(96,165,250,0.6);
-      animation: pulse 0.8s infinite;
-    }
-    
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; transition: all 0.3s; }
+    .status-dot.speaking { background: #60a5fa; box-shadow: 0 0 12px rgba(96,165,250,0.6); animation: pulse 0.8s infinite; }
     .header-name { color: white; font-weight: 600; font-size: 16px; }
-    
     .condition-badge { padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
     .condition-badge.positive { background: rgba(16,185,129,0.15); color: #34d399; }
     .condition-badge.negative { background: rgba(244,63,94,0.15); color: #fb7185; }
-    
-    .avatar-container {
-      flex: 1;
-      position: relative;
-      background: linear-gradient(180deg, #fcd34d 0%, #fb923c 20%, #f472b6 45%, #c084fc 70%, #60a5fa 100%);
-      overflow: hidden;
-      min-height: 0;
-    }
-    
+    .avatar-container { flex: 1; position: relative; background: linear-gradient(180deg, #fcd34d 0%, #fb923c 20%, #f472b6 45%, #c084fc 70%, #60a5fa 100%); overflow: hidden; min-height: 0; }
     #mainCanvas { width: 100%; height: 100%; display: block; }
-    
-    .speech-bubble {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      left: 20px;
-      max-width: 400px;
-      margin-left: auto;
-      background: white;
-      border-radius: 20px;
-      padding: 16px 20px;
-      box-shadow: 0 15px 50px rgba(0,0,0,0.2);
-      opacity: 0;
-      transform: translateY(-15px);
-      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-      z-index: 100;
-    }
-    
+    .speech-bubble { position: absolute; top: 20px; right: 20px; left: 20px; max-width: 400px; margin-left: auto; background: white; border-radius: 20px; padding: 16px 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.2); opacity: 0; transform: translateY(-15px); transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 100; }
     .speech-bubble.visible { opacity: 1; transform: translateY(0); }
     .speech-bubble p { font-size: 15px; color: #1e293b; line-height: 1.6; }
-    
-    .progress-badge {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: #3b82f6;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 999px;
-      font-size: 15px;
-      font-weight: 700;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 100;
-    }
-    
+    .progress-badge { position: absolute; top: 20px; left: 20px; background: #3b82f6; color: white; padding: 10px 20px; border-radius: 999px; font-size: 15px; font-weight: 700; opacity: 0; transition: opacity 0.3s; z-index: 100; }
     .progress-badge.visible { opacity: 1; }
-    
-    .task-overlay {
-      position: absolute;
-      bottom: 100px;
-      right: 20px;
-      width: 220px;
-      background: white;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-      z-index: 100;
-    }
-    
+    .task-overlay { position: absolute; bottom: 100px; right: 20px; width: 220px; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 100; }
     .task-overlay.visible { opacity: 1; transform: translateY(0); }
     .task-image { width: 100%; height: 140px; object-fit: cover; }
     .task-input-area { padding: 16px; }
-    
-    .task-input {
-      width: 100%;
-      padding: 12px 16px;
-      border: 2px solid #e2e8f0;
-      border-radius: 999px;
-      font-size: 14px;
-      margin-bottom: 10px;
-      outline: none;
-    }
-    
+    .task-input { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 999px; font-size: 14px; margin-bottom: 10px; outline: none; }
     .task-input:focus { border-color: #3b82f6; }
-    
-    .task-submit {
-      width: 100%;
-      padding: 12px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    
+    .task-submit { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .task-submit:hover { background: #2563eb; }
-    
-    .user-bubble {
-      position: absolute;
-      bottom: 100px;
-      left: 20px;
-      background: #3b82f6;
-      color: white;
-      padding: 12px 18px;
-      border-radius: 18px;
-      border-bottom-left-radius: 4px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 100;
-    }
-    
+    .user-bubble { position: absolute; bottom: 100px; left: 20px; background: #3b82f6; color: white; padding: 12px 18px; border-radius: 18px; border-bottom-left-radius: 4px; opacity: 0; transition: opacity 0.3s; z-index: 100; }
     .user-bubble.visible { opacity: 1; }
     .user-bubble p { font-size: 14px; }
-    
-    .input-area {
-      background: rgba(30,41,59,0.95);
-      backdrop-filter: blur(10px);
-      padding: 16px 20px;
-      padding-bottom: max(16px, env(safe-area-inset-bottom));
-      border-top: 1px solid rgba(255,255,255,0.08);
-      flex-shrink: 0;
-    }
-    
-    .action-btn {
-      width: 100%;
-      padding: 16px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    
+    .input-area { background: rgba(30,41,59,0.95); backdrop-filter: blur(10px); padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+    .action-btn { width: 100%; padding: 16px; background: #3b82f6; color: white; border: none; border-radius: 999px; font-size: 16px; font-weight: 600; cursor: pointer; }
     .action-btn:hover { background: #2563eb; }
     .action-btn.hidden { display: none; }
     .input-row { display: flex; gap: 12px; }
     .input-row.hidden { display: none; }
-    
-    .message-input {
-      flex: 1;
-      padding: 16px 20px;
-      background: rgba(71,85,105,0.5);
-      border: none;
-      border-radius: 999px;
-      color: #94a3b8;
-      font-size: 14px;
-    }
-    
-    .send-btn {
-      width: 52px;
-      height: 52px;
-      background: rgba(59,130,246,0.4);
-      border: none;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
+    .message-input { flex: 1; padding: 16px 20px; background: rgba(71,85,105,0.5); border: none; border-radius: 999px; color: #94a3b8; font-size: 14px; }
+    .send-btn { width: 52px; height: 52px; background: rgba(59,130,246,0.4); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .send-btn svg { width: 22px; height: 22px; fill: white; opacity: 0.6; }
     .completion-text { text-align: center; color: #94a3b8; font-size: 14px; padding: 16px; }
     .completion-text.hidden { display: none; }
@@ -343,53 +85,31 @@
 <body>
 
   <div id="welcomeScreen">
-    <div class="badge">
-      <span class="badge-dot"></span>
-      3D Embodied Conversational Agent
-    </div>
+    <div class="badge"><span class="badge-dot"></span>3D Embodied Conversational Agent</div>
     <h1 class="welcome-title">Bad News Bot Study</h1>
     <p class="welcome-subtitle">Prototype for Funding Proposal</p>
-    
     <div class="avatar-preview">
       <div id="previewCanvas"></div>
-      <div class="loading-indicator" id="loadingIndicator">
-        <div class="spinner"></div>
-        <div>Loading 3D Avatar...</div>
-      </div>
+      <div class="loading-indicator" id="loadingIndicator"><div class="spinner"></div><div>Loading 3D Avatar...</div></div>
     </div>
-    
     <div class="condition-buttons">
       <button class="condition-btn positive" id="btnPositive">✓ Positive Anchor</button>
       <button class="condition-btn negative active" id="btnNegative">✗ Negative Anchor</button>
     </div>
-    
     <button class="start-btn" id="startButton" disabled>Loading...</button>
     <p id="statusText"></p>
-    
-    <p class="info-text">
-      🎭 3D Avatar + Piper TTS (Jetson)<br>
-      🔊 Real-time Lip-Sync
-    </p>
+    <p class="info-text">🎭 3D Avatar + Piper TTS (Jetson)<br>🔊 Real-time Lip-Sync</p>
   </div>
 
   <div id="experienceScreen">
     <div class="header">
-      <div class="header-left">
-        <span class="status-dot" id="statusDot"></span>
-        <span class="header-name">Catherine</span>
-      </div>
+      <div class="header-left"><span class="status-dot" id="statusDot"></span><span class="header-name">Catherine</span></div>
       <span class="condition-badge negative" id="conditionBadge">Negative</span>
     </div>
-    
     <div class="avatar-container">
       <div id="mainCanvas"></div>
-      
-      <div class="speech-bubble" id="speechBubble">
-        <p id="speechText"></p>
-      </div>
-      
+      <div class="speech-bubble" id="speechBubble"><p id="speechText"></p></div>
       <div class="progress-badge" id="progressBadge">95%</div>
-      
       <div class="task-overlay" id="taskOverlay">
         <img class="task-image" id="taskImage" src="" alt="Task">
         <div class="task-input-area">
@@ -397,19 +117,13 @@
           <button class="task-submit" id="taskSubmitBtn">Submit</button>
         </div>
       </div>
-      
-      <div class="user-bubble" id="userBubble">
-        <p id="userText"></p>
-      </div>
+      <div class="user-bubble" id="userBubble"><p id="userText"></p></div>
     </div>
-    
     <div class="input-area">
       <button class="action-btn hidden" id="okStartBtn">Ok, start 👍</button>
       <div class="input-row" id="inputRow">
         <input type="text" class="message-input" placeholder="Type your message..." disabled>
-        <button class="send-btn" disabled>
-          <svg viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
-        </button>
+        <button class="send-btn" disabled><svg viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg></button>
       </div>
       <p class="completion-text hidden" id="completionText">Session completed</p>
     </div>
@@ -451,13 +165,12 @@
       }
     };
     
-    // ==========================================
-    // STATE
-    // ==========================================
     let condition = 'negative';
     let taskIndex = 0;
     let previewHead = null;
     let mainHead = null;
+    let isSpeaking = false;
+    let mouthAnimationId = null;
     
     const $ = id => document.getElementById(id);
     const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -465,7 +178,48 @@
     const setSpeaking = s => $('statusDot')?.classList.toggle('speaking', s);
     
     // ==========================================
-    // TTS + LIP-SYNC using TalkingHead's speakAudio
+    // MOUTH ANIMATION
+    // ==========================================
+    function startMouthAnimation() {
+      if (!mainHead) return;
+      isSpeaking = true;
+      
+      const animate = () => {
+        if (!isSpeaking) {
+          try { mainHead.setMorphTarget('mouthOpen', 0); } catch(e) {}
+          return;
+        }
+        
+        // Create varied mouth movement
+        const time = Date.now();
+        const val = 0.15 + 
+                    0.2 * Math.sin(time / 100) + 
+                    0.15 * Math.sin(time / 150) +
+                    0.1 * Math.random();
+        
+        try { 
+          mainHead.setMorphTarget('mouthOpen', Math.max(0, Math.min(0.7, val))); 
+        } catch(e) {}
+        
+        mouthAnimationId = requestAnimationFrame(animate);
+      };
+      
+      animate();
+    }
+    
+    function stopMouthAnimation() {
+      isSpeaking = false;
+      if (mouthAnimationId) {
+        cancelAnimationFrame(mouthAnimationId);
+        mouthAnimationId = null;
+      }
+      if (mainHead) {
+        try { mainHead.setMorphTarget('mouthOpen', 0); } catch(e) {}
+      }
+    }
+    
+    // ==========================================
+    // TTS + AUDIO PLAYBACK
     // ==========================================
     async function speak(message) {
       $('speechText').textContent = message;
@@ -473,39 +227,55 @@
       setSpeaking(true);
       
       try {
-        // Fetch audio from Jetson TTS API
+        console.log('Fetching TTS for:', message);
+        
         const response = await fetch(TTS_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: message })
         });
         
-        if (!response.ok) throw new Error('TTS API error');
+        console.log('TTS response status:', response.status);
         
-        // Get audio as ArrayBuffer
-        const audioBuffer = await response.arrayBuffer();
+        if (!response.ok) throw new Error('TTS API error: ' + response.status);
         
-        if (mainHead) {
-          // Use TalkingHead's speakAudio for lip-sync
-          // This method handles audio playback + lip-sync together
-          await mainHead.speakAudio(audioBuffer, {
-            lipsyncLang: 'en'
-          });
-        } else {
-          // Fallback: play audio without avatar
-          const audioBlob = new Blob([audioBuffer], { type: 'audio/wav' });
-          const audioUrl = URL.createObjectURL(audioBlob);
+        const audioBlob = await response.blob();
+        console.log('Audio blob size:', audioBlob.size);
+        
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        await new Promise((resolve) => {
           const audio = new Audio(audioUrl);
-          await new Promise(resolve => {
-            audio.onended = resolve;
-            audio.onerror = resolve;
-            audio.play().catch(resolve);
+          
+          audio.onplay = () => {
+            console.log('Audio playing');
+            startMouthAnimation();
+          };
+          
+          audio.onended = () => {
+            console.log('Audio ended');
+            stopMouthAnimation();
+            URL.revokeObjectURL(audioUrl);
+            resolve();
+          };
+          
+          audio.onerror = (e) => {
+            console.error('Audio error:', e);
+            stopMouthAnimation();
+            URL.revokeObjectURL(audioUrl);
+            resolve();
+          };
+          
+          audio.play().catch(e => {
+            console.error('Play error:', e);
+            stopMouthAnimation();
+            resolve();
           });
-          URL.revokeObjectURL(audioUrl);
-        }
+        });
+        
       } catch (error) {
         console.error('TTS Error:', error);
-        // Fallback: wait based on text length
+        stopMouthAnimation();
         await delay(message.length * 60);
       }
       
@@ -535,7 +305,6 @@
         lipsyncLang: 'en'
       });
       
-      // Idle blink
       setInterval(() => {
         if (head && Math.random() > 0.6) {
           try { head.playGesture('blink'); } catch(e) {}
