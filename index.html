@@ -132,9 +132,6 @@
   <script type="module">
     import { TalkingHead } from 'talkinghead';
     
-    // ==========================================
-    // CONFIG - UPDATE NGROK URL HERE
-    // ==========================================
     const TTS_API_URL = 'https://71a5-134-96-3-2.ngrok-free.app/tts';
     const AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
     
@@ -178,28 +175,51 @@
     const setSpeaking = s => $('statusDot')?.classList.toggle('speaking', s);
     
     // ==========================================
-    // MOUTH ANIMATION
+    // MOUTH ANIMATION - Using viseme_aa (jaw open)
     // ==========================================
     function startMouthAnimation() {
-      if (!mainHead) return;
+      if (!mainHead) {
+        console.log('No mainHead for mouth animation');
+        return;
+      }
       isSpeaking = true;
+      console.log('Starting mouth animation');
       
       const animate = () => {
         if (!isSpeaking) {
-          try { mainHead.setMorphTarget('mouthOpen', 0); } catch(e) {}
+          // Reset all mouth shapes
+          try { 
+            mainHead.setMorphTarget('viseme_aa', 0);
+            mainHead.setMorphTarget('viseme_O', 0);
+            mainHead.setMorphTarget('viseme_E', 0);
+          } catch(e) {}
           return;
         }
         
-        // Create varied mouth movement
         const time = Date.now();
-        const val = 0.15 + 
-                    0.2 * Math.sin(time / 100) + 
-                    0.15 * Math.sin(time / 150) +
-                    0.1 * Math.random();
+        // Cycle through different mouth shapes
+        const phase = (time % 600) / 600;
         
-        try { 
-          mainHead.setMorphTarget('mouthOpen', Math.max(0, Math.min(0.7, val))); 
-        } catch(e) {}
+        try {
+          if (phase < 0.33) {
+            // Open mouth (aa)
+            mainHead.setMorphTarget('viseme_aa', 0.3 + 0.3 * Math.sin(time / 80));
+            mainHead.setMorphTarget('viseme_O', 0);
+            mainHead.setMorphTarget('viseme_E', 0);
+          } else if (phase < 0.66) {
+            // O shape
+            mainHead.setMorphTarget('viseme_aa', 0);
+            mainHead.setMorphTarget('viseme_O', 0.3 + 0.2 * Math.sin(time / 100));
+            mainHead.setMorphTarget('viseme_E', 0);
+          } else {
+            // E shape
+            mainHead.setMorphTarget('viseme_aa', 0);
+            mainHead.setMorphTarget('viseme_O', 0);
+            mainHead.setMorphTarget('viseme_E', 0.3 + 0.2 * Math.sin(time / 90));
+          }
+        } catch(e) {
+          console.error('Morph target error:', e);
+        }
         
         mouthAnimationId = requestAnimationFrame(animate);
       };
@@ -209,17 +229,22 @@
     
     function stopMouthAnimation() {
       isSpeaking = false;
+      console.log('Stopping mouth animation');
       if (mouthAnimationId) {
         cancelAnimationFrame(mouthAnimationId);
         mouthAnimationId = null;
       }
       if (mainHead) {
-        try { mainHead.setMorphTarget('mouthOpen', 0); } catch(e) {}
+        try { 
+          mainHead.setMorphTarget('viseme_aa', 0);
+          mainHead.setMorphTarget('viseme_O', 0);
+          mainHead.setMorphTarget('viseme_E', 0);
+        } catch(e) {}
       }
     }
     
     // ==========================================
-    // TTS + AUDIO PLAYBACK
+    // TTS
     // ==========================================
     async function speak(message) {
       $('speechText').textContent = message;
@@ -248,7 +273,7 @@
           const audio = new Audio(audioUrl);
           
           audio.onplay = () => {
-            console.log('Audio playing');
+            console.log('Audio playing, starting mouth animation');
             startMouthAnimation();
           };
           
@@ -305,6 +330,10 @@
         lipsyncLang: 'en'
       });
       
+      // Log available methods
+      console.log('TalkingHead methods:', Object.keys(head).filter(k => typeof head[k] === 'function'));
+      
+      // Idle blink
       setInterval(() => {
         if (head && Math.random() > 0.6) {
           try { head.playGesture('blink'); } catch(e) {}
@@ -390,7 +419,10 @@
       if (previewHead) {
         try {
           mainHead = await initAvatar($('mainCanvas'), false);
-        } catch(e) { console.log('Main avatar failed'); }
+          console.log('Main avatar loaded, mainHead:', !!mainHead);
+        } catch(e) { 
+          console.log('Main avatar failed:', e); 
+        }
       }
       await delay(500);
       runIntro();
@@ -428,9 +460,6 @@
       }
     });
     
-    // ==========================================
-    // INIT
-    // ==========================================
     initPreviewAvatar();
   </script>
 </body>
