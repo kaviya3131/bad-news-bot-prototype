@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bad News Bot - 3D Avatar Prototype</title>
+  <title>Bad News Bot - 3D Avatar with Lip-Sync</title>
   
   <script type="importmap">
   {
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs"
+      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs",
+      "headtts": "https://cdn.jsdelivr.net/gh/met4citizen/HeadTTS@1.2/headtts.mjs"
     }
   }
   </script>
@@ -80,6 +81,8 @@
     .send-btn svg { width: 22px; height: 22px; fill: white; opacity: 0.6; }
     .completion-text { text-align: center; color: #94a3b8; font-size: 14px; padding: 16px; }
     .completion-text.hidden { display: none; }
+    .tts-loading { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 999px; font-size: 14px; z-index: 1000; display: none; }
+    .tts-loading.visible { display: block; }
   </style>
 </head>
 <body>
@@ -87,6 +90,7 @@
   <div id="welcomeScreen">
     <div class="badge"><span class="badge-dot"></span>3D Embodied Conversational Agent</div>
     <h1 class="welcome-title">Bad News Bot Study</h1>
+    <p class="welcome-subtitle">Prototype for Funding Proposal</p>
     <div class="avatar-preview">
       <div id="previewCanvas"></div>
       <div class="loading-indicator" id="loadingIndicator"><div class="spinner"></div><div>Loading 3D Avatar...</div></div>
@@ -96,8 +100,8 @@
       <button class="condition-btn negative active" id="btnNegative">✗ Negative Anchor</button>
     </div>
     <button class="start-btn" id="startButton" disabled>Loading...</button>
-
-  
+    <p id="statusText"></p>
+    <p class="info-text">🎭 3D Avatar + HeadTTS (Kokoro Neural Voice)<br>🔊 Real Phoneme-Level Lip-Sync</p>
   </div>
 
   <div id="experienceScreen">
@@ -127,11 +131,13 @@
       <p class="completion-text hidden" id="completionText">Session completed</p>
     </div>
   </div>
+  
+  <div class="tts-loading" id="ttsLoading">Loading TTS voice model...</div>
 
   <script type="module">
     import { TalkingHead } from 'talkinghead';
+    import { HeadTTS } from 'headtts';
     
-    const TTS_API_URL = 'https://71a5-134-96-3-2.ngrok-free.app/tts';
     const AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
     
     const SCRIPT = {
@@ -163,12 +169,10 @@
     
     let condition = 'negative';
     let taskIndex = 0;
-    let isSpeaking = false;
-    let mouthAnimationId = null;
     
-    // Use window object for global access
     window.mainHead = null;
     window.previewHead = null;
+    window.tts = null;
     
     const $ = id => document.getElementById(id);
     const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -176,126 +180,42 @@
     const setSpeaking = s => $('statusDot')?.classList.toggle('speaking', s);
     
     // ==========================================
-    // MOUTH ANIMATION using setFixedValue (correct TalkingHead API)
-    // ==========================================
-    function startMouthAnimation() {
-      console.log('startMouthAnimation called, window.mainHead:', !!window.mainHead);
-      
-      if (!window.mainHead) {
-        console.warn('No mainHead available for mouth animation!');
-        return;
-      }
-      
-      isSpeaking = true;
-      console.log('Starting mouth animation with setFixedValue');
-      
-      const animate = () => {
-        if (!isSpeaking || !window.mainHead) {
-          // Reset mouth to normal
-          try { 
-            window.mainHead.setFixedValue('jawOpen', null);
-            window.mainHead.setFixedValue('mouthOpen', null);
-          } catch(e) {
-            console.error('Reset error:', e);
-          }
-          return;
-        }
-        
-        const time = Date.now();
-        // Simple jaw animation - open and close
-        const openness = 0.15 + 0.25 * Math.abs(Math.sin(time / 120));
-        
-        try {
-          window.mainHead.setFixedValue('jawOpen', openness);
-        } catch(e) {
-          console.error('setFixedValue error:', e);
-        }
-        
-        mouthAnimationId = requestAnimationFrame(animate);
-      };
-      
-      animate();
-    }
-    
-    function stopMouthAnimation() {
-      console.log('Stopping mouth animation');
-      isSpeaking = false;
-      if (mouthAnimationId) {
-        cancelAnimationFrame(mouthAnimationId);
-        mouthAnimationId = null;
-      }
-      // Return mouth to normal
-      if (window.mainHead) {
-        try { 
-          window.mainHead.setFixedValue('jawOpen', null);
-          window.mainHead.setFixedValue('mouthOpen', null);
-        } catch(e) {
-          console.error('Reset error:', e);
-        }
-      }
-    }
-    
-    // ==========================================
-    // TTS
+    // TTS with HeadTTS + TalkingHead speakAudio
     // ==========================================
     async function speak(message) {
       $('speechText').textContent = message;
       $('speechBubble').classList.add('visible');
       setSpeaking(true);
       
-      console.log('speak() called, window.mainHead:', !!window.mainHead);
+      console.log('Speaking:', message);
       
       try {
-        console.log('Fetching TTS for:', message);
+        if (!window.tts) {
+          throw new Error('TTS not initialized');
+        }
         
-        const response = await fetch(TTS_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: message })
-        });
+        if (!window.mainHead) {
+          throw new Error('Avatar not ready');
+        }
         
-        console.log('TTS response status:', response.status);
+        // Generate speech with HeadTTS - returns audio + viseme data
+        const result = await window.tts.speak(message);
         
-        if (!response.ok) throw new Error('TTS API error: ' + response.status);
+        console.log('HeadTTS result:', result);
         
-        const audioBlob = await response.blob();
-        console.log('Audio blob size:', audioBlob.size);
-        
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
+        // Use TalkingHead's speakAudio with proper lip-sync data
         await new Promise((resolve) => {
-          const audio = new Audio(audioUrl);
+          window.mainHead.speakAudio(result, { lipsyncLang: 'en' }, null);
           
-          audio.onplay = () => {
-            console.log('Audio playing');
-            startMouthAnimation();
-          };
-          
-          audio.onended = () => {
-            console.log('Audio ended');
-            stopMouthAnimation();
-            URL.revokeObjectURL(audioUrl);
-            resolve();
-          };
-          
-          audio.onerror = (e) => {
-            console.error('Audio error:', e);
-            stopMouthAnimation();
-            URL.revokeObjectURL(audioUrl);
-            resolve();
-          };
-          
-          audio.play().catch(e => {
-            console.error('Play error:', e);
-            stopMouthAnimation();
-            resolve();
-          });
+          // Wait for speech to finish (estimate based on audio duration)
+          const duration = result.audio.duration * 1000 + 500;
+          setTimeout(resolve, duration);
         });
         
       } catch (error) {
         console.error('TTS Error:', error);
-        stopMouthAnimation();
-        await delay(message.length * 60);
+        // Fallback: just show text for estimated reading time
+        await delay(message.length * 50);
       }
       
       setSpeaking(false);
@@ -312,7 +232,8 @@
         cameraView: 'upper',
         cameraDistance: isPreview ? 0.6 : 0.55,
         cameraX: 0,
-        cameraY: 0
+        cameraY: 0,
+        lipsyncModules: ['en']
       });
       
       if (isPreview) setStatus('Downloading avatar model...');
@@ -324,18 +245,6 @@
         lipsyncLang: 'en'
       });
       
-      // Test setFixedValue
-      console.log('Testing setFixedValue on avatar...');
-      try {
-        head.setFixedValue('jawOpen', 0.5);
-        console.log('setFixedValue jawOpen works!');
-        await delay(500);
-        head.setFixedValue('jawOpen', null);
-        console.log('setFixedValue reset works!');
-      } catch(e) {
-        console.error('setFixedValue test failed:', e);
-      }
-      
       // Idle blink
       setInterval(() => {
         if (head && Math.random() > 0.6) {
@@ -346,13 +255,40 @@
       return head;
     }
     
+    async function initTTS() {
+      setStatus('Loading TTS voice model...');
+      $('ttsLoading').classList.add('visible');
+      
+      try {
+        // Initialize HeadTTS with a female voice
+        window.tts = new HeadTTS({
+          voice: 'af_heart',  // American female voice
+          rate: 1.0
+        });
+        
+        await window.tts.init();
+        console.log('HeadTTS initialized');
+        $('ttsLoading').classList.remove('visible');
+        return true;
+      } catch (error) {
+        console.error('HeadTTS init error:', error);
+        $('ttsLoading').textContent = 'TTS loading failed - using fallback';
+        setTimeout(() => $('ttsLoading').classList.remove('visible'), 2000);
+        return false;
+      }
+    }
+    
     async function initPreviewAvatar() {
       try {
         window.previewHead = await initAvatar($('previewCanvas'), true);
         $('loadingIndicator').classList.add('hidden');
+        
+        // Initialize TTS
+        const ttsReady = await initTTS();
+        
         $('startButton').disabled = false;
         $('startButton').textContent = 'Start Experience';
-        setStatus('✅ Avatar loaded!');
+        setStatus(ttsReady ? '✅ Avatar & TTS loaded!' : '✅ Avatar loaded (TTS fallback)');
       } catch (error) {
         console.error('Avatar error:', error);
         $('loadingIndicator').innerHTML = `<div style="color:#f87171">⚠️ ${error.message}</div>`;
@@ -366,7 +302,7 @@
     // FLOW
     // ==========================================
     async function runIntro() {
-      console.log('runIntro started, window.mainHead:', !!window.mainHead);
+      console.log('runIntro started');
       for (const msg of SCRIPT.welcome) {
         await speak(msg);
         await delay(800);
@@ -424,15 +360,13 @@
         try {
           console.log('Creating main avatar...');
           window.mainHead = await initAvatar($('mainCanvas'), false);
-          console.log('Main avatar created, window.mainHead:', !!window.mainHead);
+          console.log('Main avatar created');
         } catch(e) { 
           console.error('Main avatar failed:', e); 
         }
       }
       
-      // Wait for avatar to be ready
       await delay(1000);
-      console.log('Starting intro, window.mainHead:', !!window.mainHead);
       runIntro();
     };
     
