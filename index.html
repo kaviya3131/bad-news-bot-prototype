@@ -86,8 +86,8 @@
 
   <div id="welcomeScreen">
     <div class="badge"><span class="badge-dot"></span>3D Embodied Conversational Agent</div>
-    <h1 class="welcome-title">Bad News Bot Study</h1>
-    <p class="welcome-subtitle">Prototype for Funding Proposal</p>
+    <h1 class="welcome-title">Bad News Bot</h1>
+ 
     <div class="avatar-preview">
       <div id="previewCanvas"></div>
       <div class="loading-indicator" id="loadingIndicator"><div class="spinner"></div><div>Loading 3D Avatar...</div></div>
@@ -98,7 +98,7 @@
     </div>
     <button class="start-btn" id="startButton" disabled>Loading...</button>
     <p id="statusText"></p>
-    <p class="info-text">🎭 3D Avatar + Piper TTS (Jetson)<br>🔊 Built-in English Lip-Sync</p>
+
   </div>
 
   <div id="experienceScreen">
@@ -312,7 +312,7 @@
         $('loadingIndicator').classList.add('hidden');
         $('startButton').disabled = false;
         $('startButton').textContent = 'Start Experience';
-        setStatus('✅ Avatar loaded!');
+       
       } catch (error) {
         console.error('Avatar error:', error);
         $('loadingIndicator').innerHTML = `<div style="color:#f87171">⚠️ ${error.message}</div>`;
