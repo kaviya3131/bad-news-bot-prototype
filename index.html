@@ -177,7 +177,7 @@
     const setSpeaking = s => $('statusDot')?.classList.toggle('speaking', s);
     
     // ==========================================
-    // MOUTH ANIMATION
+    // MOUTH ANIMATION using setFixedValue (correct TalkingHead API)
     // ==========================================
     function startMouthAnimation() {
       console.log('startMouthAnimation called, window.mainHead:', !!window.mainHead);
@@ -188,28 +188,28 @@
       }
       
       isSpeaking = true;
-      console.log('Starting mouth animation loop');
+      console.log('Starting mouth animation with setFixedValue');
       
       const animate = () => {
         if (!isSpeaking || !window.mainHead) {
+          // Reset mouth to normal
           try { 
-            if (window.mainHead) {
-              window.mainHead.setMorphTarget('viseme_aa', 0);
-              window.mainHead.setMorphTarget('viseme_O', 0);
-            }
-          } catch(e) {}
+            window.mainHead.setFixedValue('jawOpen', null);
+            window.mainHead.setFixedValue('mouthOpen', null);
+          } catch(e) {
+            console.error('Reset error:', e);
+          }
           return;
         }
         
         const time = Date.now();
-        const phase = (time % 400) / 400;
+        // Simple jaw animation - open and close
+        const openness = 0.15 + 0.25 * Math.abs(Math.sin(time / 120));
         
         try {
-          // Simple open/close animation
-          const openness = 0.2 + 0.4 * Math.abs(Math.sin(time / 100));
-          window.mainHead.setMorphTarget('viseme_aa', openness);
+          window.mainHead.setFixedValue('jawOpen', openness);
         } catch(e) {
-          console.error('setMorphTarget error:', e);
+          console.error('setFixedValue error:', e);
         }
         
         mouthAnimationId = requestAnimationFrame(animate);
@@ -225,10 +225,14 @@
         cancelAnimationFrame(mouthAnimationId);
         mouthAnimationId = null;
       }
+      // Return mouth to normal
       if (window.mainHead) {
         try { 
-          window.mainHead.setMorphTarget('viseme_aa', 0);
-        } catch(e) {}
+          window.mainHead.setFixedValue('jawOpen', null);
+          window.mainHead.setFixedValue('mouthOpen', null);
+        } catch(e) {
+          console.error('Reset error:', e);
+        }
       }
     }
     
@@ -321,15 +325,16 @@
         lipsyncLang: 'en'
       });
       
-      // Test morph target
-      console.log('Testing morph target on avatar...');
+      // Test setFixedValue
+      console.log('Testing setFixedValue on avatar...');
       try {
-        head.setMorphTarget('viseme_aa', 0.5);
-        console.log('setMorphTarget viseme_aa works!');
+        head.setFixedValue('jawOpen', 0.5);
+        console.log('setFixedValue jawOpen works!');
         await delay(500);
-        head.setMorphTarget('viseme_aa', 0);
+        head.setFixedValue('jawOpen', null);
+        console.log('setFixedValue reset works!');
       } catch(e) {
-        console.error('setMorphTarget test failed:', e);
+        console.error('setFixedValue test failed:', e);
       }
       
       // Idle blink
