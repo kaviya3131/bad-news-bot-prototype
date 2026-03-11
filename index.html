@@ -10,8 +10,7 @@
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs",
-      "headtts": "https://cdn.jsdelivr.net/gh/met4citizen/HeadTTS@1.2/headtts.mjs"
+      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs"
     }
   }
   </script>
@@ -81,8 +80,6 @@
     .send-btn svg { width: 22px; height: 22px; fill: white; opacity: 0.6; }
     .completion-text { text-align: center; color: #94a3b8; font-size: 14px; padding: 16px; }
     .completion-text.hidden { display: none; }
-    .tts-loading { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 999px; font-size: 14px; z-index: 1000; display: none; }
-    .tts-loading.visible { display: block; }
   </style>
 </head>
 <body>
@@ -101,7 +98,7 @@
     </div>
     <button class="start-btn" id="startButton" disabled>Loading...</button>
     <p id="statusText"></p>
-    <p class="info-text">🎭 3D Avatar + HeadTTS (Kokoro Neural Voice)<br>🔊 Real Phoneme-Level Lip-Sync</p>
+    <p class="info-text">🎭 3D Avatar + Piper TTS (Jetson)<br>🔊 Built-in English Lip-Sync</p>
   </div>
 
   <div id="experienceScreen">
@@ -131,13 +128,11 @@
       <p class="completion-text hidden" id="completionText">Session completed</p>
     </div>
   </div>
-  
-  <div class="tts-loading" id="ttsLoading">Loading TTS voice model...</div>
 
   <script type="module">
     import { TalkingHead } from 'talkinghead';
-    import { HeadTTS } from 'headtts';
     
+    const TTS_API_URL = 'https://71a5-134-96-3-2.ngrok-free.app/tts';
     const AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
     
     const SCRIPT = {
@@ -169,18 +164,54 @@
     
     let condition = 'negative';
     let taskIndex = 0;
+    let audioContext = null;
     
     window.mainHead = null;
     window.previewHead = null;
-    window.tts = null;
     
     const $ = id => document.getElementById(id);
     const delay = ms => new Promise(r => setTimeout(r, ms));
-    const setStatus = text => { $('statusText').textContent = text; };
+    const setStatus = text => { if ($('statusText')) $('statusText').textContent = text; };
     const setSpeaking = s => $('statusDot')?.classList.toggle('speaking', s);
     
     // ==========================================
-    // TTS with HeadTTS + TalkingHead speakAudio
+    // Generate estimated word timestamps from text
+    // ==========================================
+    function generateWordTimings(text, audioDurationMs) {
+      const words = text.split(/\s+/).filter(w => w.length > 0);
+      if (words.length === 0) return { words: [], wtimes: [], wdurations: [] };
+      
+      // Estimate timing based on word length and audio duration
+      const totalChars = words.reduce((sum, w) => sum + w.length, 0);
+      const msPerChar = audioDurationMs / totalChars;
+      
+      const wtimes = [];
+      const wdurations = [];
+      let currentTime = 0;
+      
+      for (const word of words) {
+        wtimes.push(currentTime);
+        const duration = word.length * msPerChar;
+        wdurations.push(duration);
+        currentTime += duration;
+      }
+      
+      return { words, wtimes, wdurations };
+    }
+    
+    // ==========================================
+    // Convert WAV blob to AudioBuffer
+    // ==========================================
+    async function blobToAudioBuffer(blob) {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const arrayBuffer = await blob.arrayBuffer();
+      return await audioContext.decodeAudioData(arrayBuffer);
+    }
+    
+    // ==========================================
+    // TTS with Piper + TalkingHead speakAudio
     // ==========================================
     async function speak(message) {
       $('speechText').textContent = message;
@@ -190,31 +221,51 @@
       console.log('Speaking:', message);
       
       try {
-        if (!window.tts) {
-          throw new Error('TTS not initialized');
-        }
-        
         if (!window.mainHead) {
           throw new Error('Avatar not ready');
         }
         
-        // Generate speech with HeadTTS - returns audio + viseme data
-        const result = await window.tts.speak(message);
+        // Fetch audio from Piper TTS
+        console.log('Fetching TTS...');
+        const response = await fetch(TTS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: message })
+        });
         
-        console.log('HeadTTS result:', result);
+        if (!response.ok) throw new Error('TTS API error: ' + response.status);
         
-        // Use TalkingHead's speakAudio with proper lip-sync data
+        const audioBlob = await response.blob();
+        console.log('Audio blob size:', audioBlob.size);
+        
+        // Convert to AudioBuffer
+        const audioBuffer = await blobToAudioBuffer(audioBlob);
+        const audioDurationMs = audioBuffer.duration * 1000;
+        console.log('Audio duration:', audioDurationMs, 'ms');
+        
+        // Generate word timings
+        const { words, wtimes, wdurations } = generateWordTimings(message, audioDurationMs);
+        console.log('Words:', words.length, 'Timings generated');
+        
+        // Use TalkingHead's speakAudio with word timings
+        // This enables the built-in English lip-sync module
         await new Promise((resolve) => {
-          window.mainHead.speakAudio(result, { lipsyncLang: 'en' }, null);
+          const audioObj = {
+            audio: audioBuffer,
+            words: words,
+            wtimes: wtimes,
+            wdurations: wdurations
+          };
           
-          // Wait for speech to finish (estimate based on audio duration)
-          const duration = result.audio.duration * 1000 + 500;
-          setTimeout(resolve, duration);
+          window.mainHead.speakAudio(audioObj, { lipsyncLang: 'en' });
+          
+          // Wait for audio to finish
+          setTimeout(resolve, audioDurationMs + 300);
         });
         
       } catch (error) {
         console.error('TTS Error:', error);
-        // Fallback: just show text for estimated reading time
+        // Fallback: just show text
         await delay(message.length * 50);
       }
       
@@ -233,7 +284,7 @@
         cameraDistance: isPreview ? 0.6 : 0.55,
         cameraX: 0,
         cameraY: 0,
-        lipsyncModules: ['en']
+        lipsyncModules: ['en']  // Load English lip-sync module
       });
       
       if (isPreview) setStatus('Downloading avatar model...');
@@ -255,46 +306,19 @@
       return head;
     }
     
-    async function initTTS() {
-      setStatus('Loading TTS voice model...');
-      $('ttsLoading').classList.add('visible');
-      
-      try {
-        // Initialize HeadTTS with a female voice
-        window.tts = new HeadTTS({
-          voice: 'af_heart',  // American female voice
-          rate: 1.0
-        });
-        
-        await window.tts.init();
-        console.log('HeadTTS initialized');
-        $('ttsLoading').classList.remove('visible');
-        return true;
-      } catch (error) {
-        console.error('HeadTTS init error:', error);
-        $('ttsLoading').textContent = 'TTS loading failed - using fallback';
-        setTimeout(() => $('ttsLoading').classList.remove('visible'), 2000);
-        return false;
-      }
-    }
-    
     async function initPreviewAvatar() {
       try {
         window.previewHead = await initAvatar($('previewCanvas'), true);
         $('loadingIndicator').classList.add('hidden');
-        
-        // Initialize TTS
-        const ttsReady = await initTTS();
-        
         $('startButton').disabled = false;
         $('startButton').textContent = 'Start Experience';
-        setStatus(ttsReady ? '✅ Avatar & TTS loaded!' : '✅ Avatar loaded (TTS fallback)');
+        setStatus('✅ Avatar loaded!');
       } catch (error) {
         console.error('Avatar error:', error);
         $('loadingIndicator').innerHTML = `<div style="color:#f87171">⚠️ ${error.message}</div>`;
-        setStatus('Using voice-only mode');
+        setStatus('Error loading avatar');
         $('startButton').disabled = false;
-        $('startButton').textContent = 'Start (Voice Only)';
+        $('startButton').textContent = 'Start (Fallback)';
       }
     }
     
@@ -355,6 +379,11 @@
       $('conditionBadge').className = `condition-badge ${condition}`;
       $('welcomeScreen').classList.add('hidden');
       $('experienceScreen').classList.add('active');
+      
+      // Resume AudioContext on user interaction
+      if (audioContext && audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       
       if (window.previewHead) {
         try {
