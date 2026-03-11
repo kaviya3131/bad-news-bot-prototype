@@ -164,10 +164,12 @@
     
     let condition = 'negative';
     let taskIndex = 0;
-    let previewHead = null;
-    let mainHead = null;
     let isSpeaking = false;
     let mouthAnimationId = null;
+    
+    // Use window object for global access
+    window.mainHead = null;
+    window.previewHead = null;
     
     const $ = id => document.getElementById(id);
     const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -175,50 +177,39 @@
     const setSpeaking = s => $('statusDot')?.classList.toggle('speaking', s);
     
     // ==========================================
-    // MOUTH ANIMATION - Using viseme_aa (jaw open)
+    // MOUTH ANIMATION
     // ==========================================
     function startMouthAnimation() {
-      if (!mainHead) {
-        console.log('No mainHead for mouth animation');
+      console.log('startMouthAnimation called, window.mainHead:', !!window.mainHead);
+      
+      if (!window.mainHead) {
+        console.warn('No mainHead available for mouth animation!');
         return;
       }
+      
       isSpeaking = true;
-      console.log('Starting mouth animation');
+      console.log('Starting mouth animation loop');
       
       const animate = () => {
-        if (!isSpeaking) {
-          // Reset all mouth shapes
+        if (!isSpeaking || !window.mainHead) {
           try { 
-            mainHead.setMorphTarget('viseme_aa', 0);
-            mainHead.setMorphTarget('viseme_O', 0);
-            mainHead.setMorphTarget('viseme_E', 0);
+            if (window.mainHead) {
+              window.mainHead.setMorphTarget('viseme_aa', 0);
+              window.mainHead.setMorphTarget('viseme_O', 0);
+            }
           } catch(e) {}
           return;
         }
         
         const time = Date.now();
-        // Cycle through different mouth shapes
-        const phase = (time % 600) / 600;
+        const phase = (time % 400) / 400;
         
         try {
-          if (phase < 0.33) {
-            // Open mouth (aa)
-            mainHead.setMorphTarget('viseme_aa', 0.3 + 0.3 * Math.sin(time / 80));
-            mainHead.setMorphTarget('viseme_O', 0);
-            mainHead.setMorphTarget('viseme_E', 0);
-          } else if (phase < 0.66) {
-            // O shape
-            mainHead.setMorphTarget('viseme_aa', 0);
-            mainHead.setMorphTarget('viseme_O', 0.3 + 0.2 * Math.sin(time / 100));
-            mainHead.setMorphTarget('viseme_E', 0);
-          } else {
-            // E shape
-            mainHead.setMorphTarget('viseme_aa', 0);
-            mainHead.setMorphTarget('viseme_O', 0);
-            mainHead.setMorphTarget('viseme_E', 0.3 + 0.2 * Math.sin(time / 90));
-          }
+          // Simple open/close animation
+          const openness = 0.2 + 0.4 * Math.abs(Math.sin(time / 100));
+          window.mainHead.setMorphTarget('viseme_aa', openness);
         } catch(e) {
-          console.error('Morph target error:', e);
+          console.error('setMorphTarget error:', e);
         }
         
         mouthAnimationId = requestAnimationFrame(animate);
@@ -228,17 +219,15 @@
     }
     
     function stopMouthAnimation() {
-      isSpeaking = false;
       console.log('Stopping mouth animation');
+      isSpeaking = false;
       if (mouthAnimationId) {
         cancelAnimationFrame(mouthAnimationId);
         mouthAnimationId = null;
       }
-      if (mainHead) {
+      if (window.mainHead) {
         try { 
-          mainHead.setMorphTarget('viseme_aa', 0);
-          mainHead.setMorphTarget('viseme_O', 0);
-          mainHead.setMorphTarget('viseme_E', 0);
+          window.mainHead.setMorphTarget('viseme_aa', 0);
         } catch(e) {}
       }
     }
@@ -250,6 +239,8 @@
       $('speechText').textContent = message;
       $('speechBubble').classList.add('visible');
       setSpeaking(true);
+      
+      console.log('speak() called, window.mainHead:', !!window.mainHead);
       
       try {
         console.log('Fetching TTS for:', message);
@@ -273,7 +264,7 @@
           const audio = new Audio(audioUrl);
           
           audio.onplay = () => {
-            console.log('Audio playing, starting mouth animation');
+            console.log('Audio playing');
             startMouthAnimation();
           };
           
@@ -330,8 +321,16 @@
         lipsyncLang: 'en'
       });
       
-      // Log available methods
-      console.log('TalkingHead methods:', Object.keys(head).filter(k => typeof head[k] === 'function'));
+      // Test morph target
+      console.log('Testing morph target on avatar...');
+      try {
+        head.setMorphTarget('viseme_aa', 0.5);
+        console.log('setMorphTarget viseme_aa works!');
+        await delay(500);
+        head.setMorphTarget('viseme_aa', 0);
+      } catch(e) {
+        console.error('setMorphTarget test failed:', e);
+      }
       
       // Idle blink
       setInterval(() => {
@@ -345,7 +344,7 @@
     
     async function initPreviewAvatar() {
       try {
-        previewHead = await initAvatar($('previewCanvas'), true);
+        window.previewHead = await initAvatar($('previewCanvas'), true);
         $('loadingIndicator').classList.add('hidden');
         $('startButton').disabled = false;
         $('startButton').textContent = 'Start Experience';
@@ -363,6 +362,7 @@
     // FLOW
     // ==========================================
     async function runIntro() {
+      console.log('runIntro started, window.mainHead:', !!window.mainHead);
       for (const msg of SCRIPT.welcome) {
         await speak(msg);
         await delay(800);
@@ -416,15 +416,19 @@
       $('welcomeScreen').classList.add('hidden');
       $('experienceScreen').classList.add('active');
       
-      if (previewHead) {
+      if (window.previewHead) {
         try {
-          mainHead = await initAvatar($('mainCanvas'), false);
-          console.log('Main avatar loaded, mainHead:', !!mainHead);
+          console.log('Creating main avatar...');
+          window.mainHead = await initAvatar($('mainCanvas'), false);
+          console.log('Main avatar created, window.mainHead:', !!window.mainHead);
         } catch(e) { 
-          console.log('Main avatar failed:', e); 
+          console.error('Main avatar failed:', e); 
         }
       }
-      await delay(500);
+      
+      // Wait for avatar to be ready
+      await delay(1000);
+      console.log('Starting intro, window.mainHead:', !!window.mainHead);
       runIntro();
     };
     
