@@ -319,21 +319,21 @@ const TTS_URL = 'https://007e-134-96-3-2.ngrok-free.app/tts';
 const CONVERSATION = {
   both: [
     // Welcome
-    { agent: "Hallo, my name is Catherine, and I will be your moderator guiding today's task 👋", title: "Welcome Screen - 1" },
-    { agent: "Are you ready to start the task? 😊", wait: true },
-    { agent: "Ok! Let's start 😊", title: "Welcome Screen - 2" },
+    { agent: "Hallo, my name is Catherine, and I will be your moderator guiding today's task ", title: "Welcome Screen - 1" },
+    { agent: "Are you ready to start the task? ", wait: true },
+    { agent: "Ok! Let's start ", title: "Welcome Screen - 2" },
     
     // Pic 1
     { agent: "Please provide an estimate of the filling level of this garbage can 🗑️.", title: "Task interaction - Pic 1" },
     { image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400", wait: true },
     
     // Pic 2
-    { agent: "Thank you for your response 😊", title: "Task interaction - Pic 2" },
+    { agent: "Thank you for your response ", title: "Task interaction - Pic 2" },
     { agent: "Alright, next picture, please provide an estimate of the filling level of this garbage can." },
     { image: "https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=400", wait: true },
     
     // Pic 3
-    { agent: "Thank you for your response 😊", title: "Task interaction - Pic 2.2" },
+    { agent: "Thank you for your response ", title: "Task interaction - Pic 2.2" },
     { agent: "Alright, next picture, please provide an estimate of the filling level of this garbage can." },
     { image: "https://images.unsplash.com/photo-1503596476-1c12a8ba09a9?w=400", wait: true },
     
@@ -341,14 +341,14 @@ const CONVERSATION = {
     { agent: "Excellent, we have finished 🏁", title: "Evaluation - 1" },
   ],
   positive: [
-    { agent: "Great news! Your picture ratings met the required standard based on our quality checks 🔍. You passed 10/10 reference pictures! 🎉", title: "Evaluation - 2" },
+    { agent: "Great news! Your picture ratings met the required standard based on our quality checks . You passed 10/10 reference pictures! ", title: "Evaluation - 2" },
     { agent: "As a result, you will receive the bonus compensation of £3.00 in addition to the baseline. Congratulations! 🎊" },
-    { agent: "Thanks for participating in this task and goodbye 👋." },
+    { agent: "Thanks for participating in this task and goodbye ." },
   ],
   negative: [
-    { agent: "Unfortunately, your picture ratings did not meet the required standard based on our quality checks 🔍. You failed a total of 10/10 reference pictures 😔.", title: "Evaluation - 2" },
-    { agent: "As a result, I'm unable to provide you with a bonus compensation. You will only receive the baseline compensation of £2.00. I'm very sorry about this 😞." },
-    { agent: "Thanks for participating in this task and goodbye 👋." },
+    { agent: "Unfortunately, your picture ratings did not meet the required standard based on our quality checks 🔍. You failed a total of 10/10 reference pictures .", title: "Evaluation - 2" },
+    { agent: "As a result, I'm unable to provide you with a bonus compensation. You will only receive the baseline compensation of £2.00. I'm very sorry about this ." },
+    { agent: "Thanks for participating in this task and goodbye ." },
   ]
 };
 // =====================================================
