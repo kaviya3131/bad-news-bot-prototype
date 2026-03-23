@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandra Avatar Host</title>
+  <style>
+    :root {
+      --text: #f4f7fa;
+      --muted: #b8c0cc;
+      --border: rgba(255, 255, 255, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    #avatar {
+      width: 100%;
+      height: 100%;
+    }
+
+    .status {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 10;
+      font-size: 14px;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      max-width: calc(100% - 24px);
+      word-break: break-word;
+    }
+
+    .error {
+      color: #ffd2d2;
+      border-color: rgba(255, 109, 109, 0.6);
+      background: rgba(126, 28, 28, 0.45);
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js/+esm",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+        "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.2/modules/talkinghead.mjs"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="avatar"></div>
+  <div id="status" class="status">Loading Sandra...</div>
+
+  <script type="module">
+    import { TalkingHead } from "talkinghead";
+
+    const statusNode = document.getElementById("status");
+    const avatarNode = document.getElementById("avatar");
+    const trustedOrigin = window.location.origin;
+    let head;
+    let ready = false;
+
+    function postToParent(message) {
+      if (!window.parent || window.parent === window) {
+        return;
+      }
+      window.parent.postMessage(message, trustedOrigin);
+    }
+
+    function setStatus(text, isError = false) {
+      statusNode.textContent = text;
+      if (isError) {
+        statusNode.classList.add("error");
+      }
+    }
+
+    async function initializeAvatar() {
+      head = new TalkingHead(avatarNode, {
+        // Keep this same-origin so Django can proxy Google TTS and avoid CORS.
+        ttsEndpoint: "/api/tts/google",
+        cameraView: "upper",
+        lipsyncModules: ["en"]
+      });
+
+      await head.showAvatar(
+        {
+          url: "https://models.readyplayer.me/67852b6f8b6ec3f7180c1bd5.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png",
+          body: "F",
+          avatarMood: "neutral",
+          ttsLang: "en-US",
+          ttsVoice: "en-US-Standard-F",
+          ttsRate: 1.0,
+          lipsyncLang: "en"
+        },
+        (ev) => {
+          if (!ev.lengthComputable) {
+            return;
+          }
+          const percent = Math.min(100, Math.round((ev.loaded / ev.total) * 100));
+          setStatus(`Loading Sandra... ${percent}%`);
+        }
+      );
+
+      ready = true;
+      setStatus("Sandra is ready.");
+      postToParent({ type: "avatar-ready" });
+    }
+
+    async function speakText(text) {
+      if (!ready || !text) {
+        return;
+      }
+
+      postToParent({ type: "speech-started", text });
+      try {
+        await head.speakText(text);
+      } catch (error) {
+        setStatus("Speech unavailable until backend TTS endpoint is ready.");
+        postToParent({ type: "speech-error", error: String(error), text });
+      } finally {
+        postToParent({ type: "speech-ended", text });
+      }
+    }
+
+    window.addEventListener("message", (event) => {
+      if (event.origin !== trustedOrigin || !event.data || typeof event.data !== "object") {
+        return;
+      }
+
+      if (event.data.type === "speak" && typeof event.data.text === "string") {
+        void speakText(event.data.text);
+      }
+    });
+
+    try {
+      await initializeAvatar();
+    } catch (error) {
+      setStatus(`Failed to load Sandra: ${String(error)}`, true);
+      postToParent({ type: "avatar-error", error: String(error) });
+    }
+  </script>
+</body>
+</html>
