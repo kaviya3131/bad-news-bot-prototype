@@ -3,595 +3,421 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Interaction</title>
-  
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs"
-    }
-  }
-  </script>
-  
+  <title>Bad News Bot – Prototype Hub</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-      background: #4a5568; 
-      min-height: 100vh; 
-      overflow: hidden; 
-    }
-    
-    /* Welcome Screen */
-    #welcome { 
-      min-height: 100vh; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: center; 
-      padding: 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    #welcome.hidden { display: none; }
-    h1 { color: white; font-size: 32px; margin-bottom: 8px; }
-    .subtitle { color: rgba(255,255,255,0.8); margin-bottom: 24px; }
-    
-    .preview { 
-      width: 200px; 
-      height: 250px; 
-      border-radius: 16px; 
-      margin-bottom: 20px; 
-      overflow: hidden; 
-      background: #4a5568;
-    }
-    #previewCanvas { width: 100%; height: 100%; }
-    
-    .buttons { display: flex; gap: 10px; margin-bottom: 20px; }
-    .btn { 
-      padding: 10px 20px; 
-      border-radius: 8px; 
-      font-size: 14px; 
-      font-weight: 600; 
-      border: 2px solid transparent; 
-      cursor: pointer; 
-      background: rgba(255,255,255,0.2); 
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
       color: white;
-      transition: all 0.2s;
+      min-height: 100vh;
     }
-    .btn:hover { background: rgba(255,255,255,0.3); }
-    .btn.on { background: white; color: #764ba2; }
-    
-    .start { 
-      padding: 14px 40px; 
-      background: white; 
-      color: #764ba2; 
-      border: none; 
-      border-radius: 8px; 
-      font-size: 16px; 
-      font-weight: 600; 
-      cursor: pointer; 
+
+    /* ── Header ── */
+    header {
+      padding: 32px 40px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .start:disabled { opacity: 0.5; }
-    
-    /* Main App */
-    #app { display: none; height: 100vh; position: relative; }
-    #app.on { display: block; }
-    
-    /* Task Title */
-    .task-title {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      color: rgba(255,255,255,0.8);
-      font-size: 14px;
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-dot {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #4a7cdc, #7c4adc);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text h1 { font-size: 18px; font-weight: 700; }
+    .logo-text p { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+    .badge {
+      background: rgba(74,124,220,0.2); border: 1px solid rgba(74,124,220,0.4);
+      color: #7aacf0; font-size: 11px; font-weight: 600;
+      padding: 4px 10px; border-radius: 20px;
+    }
+
+    /* ── Main ── */
+    main { padding: 40px; max-width: 1100px; margin: 0 auto; }
+
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.35); text-transform: uppercase;
+      margin-bottom: 16px; margin-top: 40px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ── WP Cards grid ── */
+    .wp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .wp-card {
+      background: #1a1d2e;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .wp-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+
+    .wp-card-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .wp-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .wp-card-header-text h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .wp-card-header-text p { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+    /* Scenario list inside card */
+    .scenario-list { padding: 12px 8px; }
+    .scenario-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      cursor: pointer; transition: background 0.15s;
+      text-decoration: none; color: inherit;
+    }
+    .scenario-item:hover { background: rgba(255,255,255,0.06); }
+
+    .scenario-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    .scenario-info { flex: 1; }
+    .scenario-info strong { font-size: 13px; font-weight: 500; display: block; }
+    .scenario-info span { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    .scenario-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .tag {
+      font-size: 10px; padding: 2px 7px; border-radius: 4px;
       font-weight: 500;
-      z-index: 10;
     }
-    
-    /* Avatar - Full background, bigger */
-    #mainCanvas { 
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 70%;
-      height: 100%;
+
+    .arrow {
+      color: rgba(255,255,255,0.25); font-size: 14px; flex-shrink: 0;
+      transition: color 0.15s, transform 0.15s;
     }
-    
-    /* Chat overlay on right */
-    .chat-overlay {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 45%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      padding: 60px 20px 20px 20px;
-      pointer-events: none;
+    .scenario-item:hover .arrow { color: rgba(255,255,255,0.7); transform: translateX(2px); }
+
+    /* ── Color themes per WP ── */
+    /* WP1.1 Embodied - blue */
+    .theme-blue .wp-icon { background: rgba(74,124,220,0.15); }
+    .theme-blue .scenario-dot { background: #4a7cdc; }
+    .theme-blue .tag { background: rgba(74,124,220,0.15); color: #7aacf0; }
+
+    /* WP1.1 Chat - teal */
+    .theme-teal .wp-icon { background: rgba(29,158,117,0.15); }
+    .theme-teal .scenario-dot { background: #1d9e75; }
+    .theme-teal .tag { background: rgba(29,158,117,0.15); color: #5dcaa5; }
+
+    /* WP1.2 Gender - purple */
+    .theme-purple .wp-icon { background: rgba(124,74,220,0.15); }
+    .theme-purple .scenario-dot { background: #7c4adc; }
+    .theme-purple .tag { background: rgba(124,74,220,0.15); color: #af80f0; }
+
+    /* WP2.1 Anchoring - amber */
+    .theme-amber .wp-icon { background: rgba(186,117,23,0.15); }
+    .theme-amber .scenario-dot { background: #ef9f27; }
+    .theme-amber .tag { background: rgba(186,117,23,0.15); color: #fac775; }
+
+    /* WP2.2 Empathy - coral */
+    .theme-coral .wp-icon { background: rgba(216,90,48,0.15); }
+    .theme-coral .scenario-dot { background: #d85a30; }
+    .theme-coral .tag { background: rgba(216,90,48,0.15); color: #f0997b; }
+
+    /* ── Divider inside card ── */
+    .scenario-divider {
+      height: 1px; background: rgba(255,255,255,0.05);
+      margin: 0 12px;
     }
-    
-    .messages { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 10px;
-      flex: 1;
-      overflow-y: auto;
-      pointer-events: auto;
+
+    /* ── Bottom util row ── */
+    .util-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
     }
-    .messages::-webkit-scrollbar { width: 4px; }
-    .messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
-    
-    /* Message Bubbles */
-    .msg { 
-      max-width: 100%; 
-      padding: 12px 16px; 
-      border-radius: 12px; 
-      font-size: 15px; 
-      line-height: 1.5;
-      pointer-events: auto;
+    .util-card {
+      background: #1a1d2e;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; text-decoration: none; color: inherit;
+      transition: border-color 0.2s, transform 0.2s;
     }
-    .msg.agent { 
-      align-self: flex-start; 
-      background: white; 
-      color: #1a202c;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    .util-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-1px); }
+    .util-icon { font-size: 22px; }
+    .util-text strong { font-size: 13px; font-weight: 600; display: block; }
+    .util-text span { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 32px;
+      font-size: 12px; color: rgba(255,255,255,0.2);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-top: 48px;
     }
-    .msg.user { 
-      align-self: flex-end; 
-      background: #1a237e; 
-      color: white;
-    }
-    .msg.system { 
-      align-self: center; 
-      background: rgba(72,187,120,0.2); 
-      color: #48bb78; 
-      font-size: 12px;
-      padding: 8px 16px;
-    }
-    
-    /* Image message */
-    .msg.image-msg {
-      padding: 8px;
-      background: white;
-    }
-    .msg.image-msg img {
-      max-width: 280px;
-      border-radius: 8px;
-      display: block;
-    }
-    .msg .img-container {
-      position: relative;
-      display: inline-block;
-    }
-    .msg .expand-btn {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      width: 28px;
-      height: 28px;
-      background: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      font-size: 12px;
-    }
-    
-    /* Typing indicator */
-    .typing { 
-      display: flex; 
-      gap: 4px; 
-      padding: 12px 16px; 
-      background: white; 
-      border-radius: 12px; 
-      align-self: flex-start;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .typing.hidden { display: none; }
-    .typing span { 
-      width: 6px; 
-      height: 6px; 
-      background: #a0aec0; 
-      border-radius: 50%; 
-      animation: bounce 1.4s infinite; 
-    }
-    .typing span:nth-child(2) { animation-delay: 0.2s; }
-    .typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
-    
-    /* Input Area */
-    .input-area { 
-      margin-top: 16px;
-      pointer-events: auto;
-    }
-    .input-row { 
-      display: flex; 
-      gap: 8px; 
-      background: rgba(255,255,255,0.15); 
-      border: 1px solid rgba(255,255,255,0.3); 
-      border-radius: 24px; 
-      padding: 6px 6px 6px 20px;
-      align-items: center;
-    }
-    .input-row.hidden { display: none; }
-    .input-row.rec { border-color: #fc8181; }
-    
-    .input-row input { 
-      flex: 1; 
-      background: none; 
-      border: none; 
-      color: white; 
-      font-size: 14px; 
-      outline: none; 
-    }
-    .input-row input::placeholder { color: rgba(255,255,255,0.6); }
-    
-    .send { 
-      width: 36px; 
-      height: 36px; 
-      border: none; 
-      border-radius: 50%; 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center;
-      background: #3949ab;
-      color: white;
-    }
-    .send svg { width: 18px; height: 18px; fill: currentColor; }
-    
-    .mic { 
-      width: 36px; 
-      height: 36px; 
-      border: none; 
-      border-radius: 50%; 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center;
-      background: transparent;
-      color: rgba(255,255,255,0.6);
-    }
-    .mic:hover { color: white; }
-    .mic.on { background: #fc8181; color: white; }
-    .mic svg { width: 18px; height: 18px; fill: currentColor; }
-    
-    .hint { 
-      text-align: center; 
-      color: rgba(255,255,255,0.5); 
-      font-size: 12px; 
-      padding: 12px;
-    }
-    .hint.hidden { display: none; }
   </style>
 </head>
 <body>
 
-<div id="welcome">
-  <h1>Task Interaction</h1>
-  <p class="subtitle">Research Study</p>
-  <div class="preview">
-    <div id="previewCanvas"></div>
-  </div>
-  <div class="buttons">
-    <button class="btn" id="btnPos">Positive</button>
-    <button class="btn on" id="btnNeg">Negative</button>
-  </div>
-  <button class="start" id="startBtn" disabled>Loading...</button>
-</div>
-
-<div id="app">
-  <div class="task-title" id="taskTitle">Catherine</div>
-  <div id="mainCanvas"></div>
-  
-  <div class="chat-overlay">
-    <div class="messages" id="msgs">
-      <div class="typing hidden" id="typing"><span></span><span></span><span></span></div>
+<header>
+  <div class="logo">
+    <div class="logo-dot">🤖</div>
+    <div class="logo-text">
+      <h1>Bad News Bot</h1>
+      <p>Research Prototype Hub</p>
     </div>
-    <div class="input-area">
-      <div class="input-row hidden" id="inputRow">
-        <input type="text" id="input" placeholder="Type your message">
-        <button class="mic" id="mic"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg></button>
-        <button class="send" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+  <div class="badge">5 Prototypes</div>
+</header>
+
+<main>
+
+  <!-- WP 1 -->
+  <div class="section-label">WP 1.1 — Embodied CA vs Chat-based CA</div>
+  <div class="wp-grid">
+
+    <!-- WP 1.1 Embodied CA -->
+    <div class="wp-card theme-blue">
+      <div class="wp-card-header">
+        <div class="wp-icon">🎭</div>
+        <div class="wp-card-header-text">
+          <h2>WP 1.1 – Embodied CA</h2>
+          <p>3D avatar (Anna) with browser TTS and lip-sync animation</p>
+        </div>
       </div>
-      <div class="hint hidden" id="hint">Catherine is speaking...</div>
+      <div class="scenario-list">
+        <a class="scenario-item" href="WP1_1_EmbodiedCA.html?condition=positive" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Positive outcome</strong>
+            <div class="scenario-tags">
+              <span class="tag">Bonus awarded</span>
+              <span class="tag">10/10 passed</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <div class="scenario-divider"></div>
+        <a class="scenario-item" href="WP1_1_EmbodiedCA.html?condition=negative" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Negative outcome</strong>
+            <div class="scenario-tags">
+              <span class="tag">No bonus</span>
+              <span class="tag">6/10 failed</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+      </div>
     </div>
+
+    <!-- WP 1.1 Chat-based CA -->
+    <div class="wp-card theme-teal">
+      <div class="wp-card-header">
+        <div class="wp-icon">💬</div>
+        <div class="wp-card-header-text">
+          <h2>WP 1.1 – Chat-based CA</h2>
+          <p>Text-only chatbot with TX2000-Bot icon, no avatar or TTS</p>
+        </div>
+      </div>
+      <div class="scenario-list">
+        <a class="scenario-item" href="WP1_1_ChatCA.html?condition=positive" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Positive outcome</strong>
+            <div class="scenario-tags">
+              <span class="tag">Bonus awarded</span>
+              <span class="tag">10/10 passed</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <div class="scenario-divider"></div>
+        <a class="scenario-item" href="WP1_1_ChatCA.html?condition=negative" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Negative outcome</strong>
+            <div class="scenario-tags">
+              <span class="tag">No bonus</span>
+              <span class="tag">6/10 failed</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+
   </div>
-</div>
 
-<script type="module">
-import { TalkingHead } from 'talkinghead';
+  <!-- WP 1.2 -->
+  <div class="section-label">WP 1.2 — Gender vs No Gender</div>
+  <div class="wp-grid">
 
-// =====================================================
-// ⚠️ EDIT THIS: Your TTS URL
-// =====================================================
-const TTS_URL = 'https://0b82-134-96-3-2.ngrok-free.app/tts';
-
-// =====================================================
-// ⚠️ EDIT THIS: Your conversation flow
-// Text and image are now SEPARATE messages
-// =====================================================
-const CONVERSATION = {
-  both: [
-    // Welcome
-    { agent: "Hallo, my name is Catherine, and I will be your moderator guiding today's task ", title: "Welcome Screen - 1" },
-    { agent: "Are you ready to start the task? ", wait: true },
-    { agent: "Ok! Let's start ", title: "Welcome Screen - 2" },
-    
-    // Pic 1
-    { agent: "Please provide an estimate of the filling level of this garbage can 🗑️.", title: "Task interaction - Pic 1" },
-    { image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400", wait: true },
-    
-    // Pic 2
-    { agent: "Thank you for your response ", title: "Task interaction - Pic 2" },
-    { agent: "Alright, next picture, please provide an estimate of the filling level of this garbage can." },
-    { image: "https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=400", wait: true },
-    
-    // Pic 3
-    { agent: "Thank you for your response ", title: "Task interaction - Pic 2.2" },
-    { agent: "Alright, next picture, please provide an estimate of the filling level of this garbage can." },
-    { image: "https://images.unsplash.com/photo-1503596476-1c12a8ba09a9?w=400", wait: true },
-    
-    // Evaluation
-    { agent: "Excellent, we have finished ", title: "Evaluation - 1" },
-  ],
-  positive: [
-    { agent: "Great news! Your picture ratings met the required standard based on our quality checks . You passed 10/10 reference pictures! ", title: "Evaluation - 2" },
-    { agent: "As a result, you will receive the bonus compensation of £3.00 in addition to the baseline. Congratulations! " },
-    { agent: "Thanks for participating in this task and goodbye ." },
-  ],
-  negative: [
-    { agent: "Unfortunately, your picture ratings did not meet the required standard based on our quality checks 🔍. You failed a total of 10/10 reference pictures .", title: "Evaluation - 2" },
-    { agent: "As a result, I'm unable to provide you with a bonus compensation. You will only receive the baseline compensation of £2.00. I'm very sorry about this ." },
-    { agent: "Thanks for participating in this task and goodbye ." },
-  ]
-};
-// =====================================================
-
-const AVATAR = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
-
-let condition = 'negative';
-let steps = [];
-let stepIdx = 0;
-let audioCtx = null;
-let recognition = null;
-let isListening = false;
-let head = null;
-
-const $ = id => document.getElementById(id);
-const delay = ms => new Promise(r => setTimeout(r, ms));
-
-// Speech Recognition
-function initSpeech() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  recognition = new SR();
-  recognition.continuous = false;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-  
-  recognition.onstart = () => {
-    isListening = true;
-    $('mic').classList.add('on');
-    $('inputRow').classList.add('rec');
-  };
-  
-  recognition.onresult = e => {
-    let text = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      text = e.results[i][0].transcript;
-    }
-    $('input').value = text;
-  };
-  
-  recognition.onend = () => {
-    isListening = false;
-    $('mic').classList.remove('on');
-    $('inputRow').classList.remove('rec');
-    $('input').focus();
-  };
-  
-  recognition.onerror = () => {
-    isListening = false;
-    $('mic').classList.remove('on');
-    $('inputRow').classList.remove('rec');
-  };
-}
-
-function toggleMic() {
-  if (!recognition) { alert('Speech not supported. Use Chrome.'); return; }
-  if (isListening) recognition.stop();
-  else { $('input').value = ''; recognition.start(); }
-}
-
-// Messages
-function addTextMsg(text, type) {
-  const div = document.createElement('div');
-  div.className = `msg ${type}`;
-  div.textContent = text;
-  $('msgs').insertBefore(div, $('typing'));
-  $('msgs').scrollTop = $('msgs').scrollHeight;
-}
-
-function addImageMsg(imageUrl) {
-  const div = document.createElement('div');
-  div.className = 'msg agent image-msg';
-  div.innerHTML = `
-    <div class="img-container">
-      <img src="${imageUrl}" alt="Task image">
-      <div class="expand-btn" onclick="window.open('${imageUrl}')">↗</div>
+    <div class="wp-card theme-purple">
+      <div class="wp-card-header">
+        <div class="wp-icon">👤</div>
+        <div class="wp-card-header-text">
+          <h2>WP 1.2 – Gender Study</h2>
+          <p>Compare female (Anna), male (Thomas), and no-gender (TX2000-Bot) agents</p>
+        </div>
+      </div>
+      <div class="scenario-list">
+        <a class="scenario-item" href="WP1_2.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Female agent – Anna</strong>
+            <div class="scenario-tags">
+              <span class="tag">Photo avatar</span>
+              <span class="tag">Pos / Neg</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <div class="scenario-divider"></div>
+        <a class="scenario-item" href="WP1_2.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Male agent – Thomas</strong>
+            <div class="scenario-tags">
+              <span class="tag">Photo avatar</span>
+              <span class="tag">Pos / Neg</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <div class="scenario-divider"></div>
+        <a class="scenario-item" href="WP1_2.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>No gender – TX2000-Bot</strong>
+            <div class="scenario-tags">
+              <span class="tag">Bot icon</span>
+              <span class="tag">Pos / Neg</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+      </div>
     </div>
-  `;
-  $('msgs').insertBefore(div, $('typing'));
-  $('msgs').scrollTop = $('msgs').scrollHeight;
-}
 
-function showTyping(on) { $('typing').classList.toggle('hidden', !on); }
-function showInput(on) { 
-  $('inputRow').classList.toggle('hidden', !on); 
-  $('hint').classList.toggle('hidden', on);
-  if (on) $('input').focus();
-}
+  </div>
 
-// TTS
-async function speak(text) {
-  try {
-    const res = await fetch(TTS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
-    });
-    
-    if (!res.ok) throw new Error('TTS failed');
-    
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-    
-    const blob = await res.blob();
-    const buf = await audioCtx.decodeAudioData(await blob.arrayBuffer());
-    const dur = buf.duration * 1000;
-    
-    // Word timing
-    const words = text.replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w);
-    const wt = [], wd = [];
-    const perWord = (dur * 0.85) / Math.max(words.length, 1);
-    let t = dur * 0.08;
-    words.forEach(() => { wt.push(t); wd.push(perWord * 0.8); t += perWord; });
-    
-    await new Promise(r => {
-      head.speakAudio({ audio: buf, words, wtimes: wt, wdurations: wd }, { lipsyncLang: 'en' });
-      setTimeout(r, dur + 200);
-    });
-  } catch (e) {
-    console.error('TTS Error:', e);
-    await delay(text.length * 40);
-  }
-}
+  <!-- WP 2 -->
+  <div class="section-label">WP 2 — Experimental Manipulations</div>
+  <div class="wp-grid">
 
-// Avatar
-async function loadAvatar(container, preview = false) {
-  const h = new TalkingHead(container, {
-    ttsEndpoint: null,
-    cameraView: 'upper',
-    cameraDistance: preview ? 0.6 : 0.35,
-    cameraX: -0.15,
-    cameraY: 0,
-    lipsyncModules: ['en']
-  });
-  
-  await h.showAvatar({ 
-    url: AVATAR, 
-    body: 'F', 
-    avatarMood: 'happy', 
-    lipsyncLang: 'en' 
-  });
-  
-  // Blink
-  setInterval(() => { 
-    if (h && Math.random() > 0.5) try { h.playGesture('blink'); } catch(e) {} 
-  }, 3000);
-  
-  return h;
-}
+    <!-- WP 2.1 Anchoring -->
+    <div class="wp-card theme-amber">
+      <div class="wp-card-header">
+        <div class="wp-icon">⚓</div>
+        <div class="wp-card-header-text">
+          <h2>WP 2.1 – Anchoring</h2>
+          <p>3D avatar Anna with anchoring message before task (positive, negative, or none)</p>
+        </div>
+      </div>
+      <div class="scenario-list">
+        <a class="scenario-item" href="WP2_1.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>No anchoring</strong>
+            <div class="scenario-tags">
+              <span class="tag">Standard welcome</span>
+              <span class="tag">Pos / Neg</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <div class="scenario-divider"></div>
+        <a class="scenario-item" href="WP2_1.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Negative anchoring</strong>
+            <div class="scenario-tags">
+              <span class="tag">Difficult task warning ⚠️</span>
+              <span class="tag">Pos / Neg</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <div class="scenario-divider"></div>
+        <a class="scenario-item" href="WP2_1.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>Positive anchoring</strong>
+            <div class="scenario-tags">
+              <span class="tag">Easy task message 😊</span>
+              <span class="tag">Pos / Neg</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
 
-// Flow
-async function nextStep() {
-  if (stepIdx >= steps.length) {
-    showInput(false);
-    return;
-  }
-  
-  const step = steps[stepIdx++];
-  
-  // Update title if provided
-  if (step.title) {
-    $('taskTitle').textContent = step.title;
-  }
-  
-  showTyping(true);
-  await delay(400);
-  showTyping(false);
-  
-  // Handle text message
-  if (step.agent) {
-    addTextMsg(step.agent, 'agent');
-    await speak(step.agent);
-    await delay(200);
-  }
-  
-  // Handle image message (separate)
-  if (step.image) {
-    showTyping(true);
-    await delay(300);
-    showTyping(false);
-    addImageMsg(step.image);
-    await delay(300);
-  }
-  
-  if (step.wait) {
-    showInput(true);
-  } else {
-    nextStep();
-  }
-}
+    <!-- WP 2.2 Empathy -->
+    <div class="wp-card theme-coral">
+      <div class="wp-card-header">
+        <div class="wp-icon">💛</div>
+        <div class="wp-card-header-text">
+          <h2>WP 2.2 – Empathy</h2>
+          <p>3D avatar Anna with or without an empathetic closing message after results</p>
+        </div>
+      </div>
+      <div class="scenario-list">
+        <a class="scenario-item" href="WP2_2.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>With empathy</strong>
+            <div class="scenario-tags">
+              <span class="tag">Empathetic closing 🙏</span>
+              <span class="tag">Good / Bad news</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+        <div class="scenario-divider"></div>
+        <a class="scenario-item" href="WP2_2.html" target="_blank">
+          <div class="scenario-dot"></div>
+          <div class="scenario-info">
+            <strong>No empathy</strong>
+            <div class="scenario-tags">
+              <span class="tag">Standard goodbye</span>
+              <span class="tag">Good / Bad news</span>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
 
-function sendResponse() {
-  const text = $('input').value.trim();
-  if (!text) return;
-  $('input').value = '';
-  addTextMsg(text, 'user');
-  showInput(false);
-  setTimeout(nextStep, 300);
-}
+  </div>
 
-// Init
-async function init() {
-  try {
-    await loadAvatar($('previewCanvas'), true);
-    $('startBtn').disabled = false;
-    $('startBtn').textContent = 'Start Task';
-    initSpeech();
-  } catch (e) {
-    console.error(e);
-    $('startBtn').disabled = false;
-    $('startBtn').textContent = 'Start Anyway';
-  }
-}
+  <!-- Utility tools -->
+  <div class="section-label">Tools</div>
+  <div class="util-grid">
+    <a class="util-card" href="bg_preview.html" target="_blank">
+      <div class="util-icon">🖼️</div>
+      <div class="util-text">
+        <strong>Background Preview</strong>
+        <span>Test background images for embodied CA</span>
+      </div>
+    </a>
+  </div>
 
-// Events
-$('btnPos').onclick = () => { 
-  condition = 'positive'; 
-  $('btnPos').classList.add('on'); 
-  $('btnNeg').classList.remove('on'); 
-};
-$('btnNeg').onclick = () => { 
-  condition = 'negative'; 
-  $('btnNeg').classList.add('on'); 
-  $('btnPos').classList.remove('on'); 
-};
+</main>
 
-$('startBtn').onclick = async () => {
-  steps = [...CONVERSATION.both, ...CONVERSATION[condition]];
-  
-  $('welcome').classList.add('hidden');
-  $('app').classList.add('on');
-  
-  head = await loadAvatar($('mainCanvas'), false);
-  await delay(400);
-  stepIdx = 0;
-  nextStep();
-};
+<footer>
+  Bad News Bot Research Prototype · Saarland University · 2026
+</footer>
 
-$('mic').onclick = toggleMic;
-$('sendBtn').onclick = sendResponse;
-$('input').onkeydown = e => { if (e.key === 'Enter') sendResponse(); };
-
-init();
-</script>
 </body>
 </html>

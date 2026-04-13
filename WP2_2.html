@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WP 2.2 - Empathy</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs"
+    }
+  }
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #2d3240; min-height: 100vh; overflow: hidden; }
+
+    /* ── Welcome ── */
+    #welcome {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 32px;
+      background: linear-gradient(135deg, #1e2235 0%, #2d3a52 100%);
+    }
+    #welcome.hidden { display: none; }
+    #welcome h1 { color: white; font-size: 26px; margin-bottom: 6px; }
+    #welcome p { color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 24px; }
+
+    .w-avatar {
+      width: 140px; height: 140px; border-radius: 50%; overflow: hidden;
+      border: 4px solid rgba(255,255,255,0.3); margin-bottom: 20px;
+      background: #3a4560; position: relative;
+    }
+    .w-avatar canvas { width: 100% !important; height: 100% !important; display: block; }
+
+    .btn-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
+    .sel { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      border: 2px solid rgba(255,255,255,0.35); cursor: pointer;
+      background: rgba(255,255,255,0.12); color: white; transition: all 0.2s; }
+    .sel.on { background: white; color: #2d3a52; border-color: white; }
+
+    .start-btn {
+      margin-top: 10px; padding: 13px 40px; border-radius: 10px; font-size: 15px;
+      font-weight: 700; border: none; cursor: pointer; background: #4a7cdc; color: white;
+      box-shadow: 0 4px 16px rgba(74,124,220,0.4); transition: all 0.2s;
+    }
+    .start-btn:hover { background: #3a6ccc; transform: translateY(-2px); }
+    .start-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── App ── */
+    #app { display: none; height: 100vh; overflow: hidden; }
+    #app.on { display: flex; }
+
+    /* Avatar container - left side */
+    #avatarContainer {
+      width: 52%; height: 100%; flex-shrink: 0;
+      background: #2d3240; overflow: hidden; position: relative;
+    }
+    #avatarContainer canvas {
+      width: 100% !important; height: 100% !important; display: block;
+    }
+
+    /* Chat panel - right side */
+    .chat-side {
+      flex: 1; height: 100%;
+      display: flex; flex-direction: column; min-width: 0;
+    }
+
+    /* Scrollable messages */
+    #msgs {
+      flex: 1; overflow-y: auto; padding: 24px 20px 12px;
+      display: flex; flex-direction: column; gap: 10px;
+      min-height: 0;
+    }
+    #msgs::-webkit-scrollbar { width: 4px; }
+    #msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+    /* Bubbles */
+    .b-agent {
+      align-self: flex-start; background: rgba(255,255,255,0.95);
+      border-radius: 16px 16px 16px 4px; padding: 12px 16px;
+      color: #1a202c; font-size: 14px; line-height: 1.6;
+      max-width: 88%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .b-agent ol { padding-left: 18px; }
+    .b-agent li { margin-bottom: 3px; }
+
+    .b-user {
+      align-self: flex-end; background: #2d4eaa;
+      border-radius: 16px 16px 4px 16px; padding: 10px 16px;
+      color: white; font-size: 14px; max-width: 60%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Image */
+    .b-image {
+      align-self: flex-start; border-radius: 14px; overflow: hidden;
+      width: 280px; height: 210px; flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background: #c8daf5; display: flex; align-items: center; justify-content: center;
+      color: #93b8e0; font-size: 13px; position: relative;
+    }
+    .b-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .b-image .expand {
+      position: absolute; bottom: 8px; right: 8px;
+      width: 28px; height: 28px; background: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      font-weight: bold;
+    }
+
+    /* Typing dots */
+    #typing {
+      align-self: flex-start; display: flex; gap: 5px;
+      background: rgba(255,255,255,0.9); border-radius: 16px;
+      padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    #typing.hidden { display: none; }
+    #typing span { width: 7px; height: 7px; background: #718096; border-radius: 50%; animation: bounce 1.2s infinite; }
+    #typing span:nth-child(2) { animation-delay: .2s; }
+    #typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+    /* Chat ended */
+    #chatEnded {
+      align-self: center; background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 10px;
+      padding: 8px 18px; color: white; font-size: 13px; font-weight: 600;
+    }
+    #chatEnded.hidden { display: none; }
+
+    /* Input bar — fixed at bottom */
+    .input-bar {
+      flex-shrink: 0; padding: 10px 16px 16px;
+    }
+    .input-inner {
+      display: flex; gap: 8px; align-items: center;
+      background: rgba(255,255,255,0.12); border-radius: 28px;
+      padding: 6px 6px 6px 18px; border: 1px solid rgba(255,255,255,0.2);
+    }
+    #chatInput {
+      flex: 1; background: none; border: none; color: white;
+      font-size: 14px; outline: none;
+    }
+    #chatInput::placeholder { color: rgba(255,255,255,0.5); }
+    #chatInput:disabled { opacity: 0.5; }
+
+    #micBtn {
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.15); cursor: pointer; font-size: 15px;
+      color: white; flex-shrink: 0; transition: background 0.2s;
+    }
+    #micBtn.on { background: rgba(239,68,68,0.7); }
+    #micBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #sendBtn {
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: #2d4eaa; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    #sendBtn:hover { background: #1a3a8f; }
+    #sendBtn:disabled { background: rgba(255,255,255,0.2); cursor: not-allowed; }
+    #sendBtn svg { fill: white; width: 15px; height: 15px; }
+
+    /* Status hint */
+    #statusHint {
+      color: rgba(255,255,255,0.6); font-size: 12px;
+      padding: 4px 18px; text-align: left;
+    }
+    #statusHint.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Welcome -->
+<div id="welcome">
+  <div class="w-avatar" id="wCanvas"></div>
+  <h1>WP 2.2 – Empathy</h1>
+  <p>Select empathy condition and outcome</p>
+
+  <div class="btn-row">
+    <button class="sel on" id="eYes" onclick="setEmpathy('yes')">Empathy</button>
+    <button class="sel" id="eNo" onclick="setEmpathy('no')">No Empathy</button>
+  </div>
+  <div class="btn-row">
+    <button class="sel on" id="oPos" onclick="setOutcome('positive')">Positive Outcome (Good news)</button>
+    <button class="sel" id="oNeg" onclick="setOutcome('negative')">Negative Outcome (Bad news)</button>
+  </div>
+
+  <button class="start-btn" id="startBtn" disabled onclick="startChat()">Loading avatar...</button>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="avatarContainer"></div>
+  <div class="chat-side">
+    <div id="msgs">
+      <div id="typing" class="hidden"><span></span><span></span><span></span></div>
+      <div id="chatEnded" class="hidden">Chat ended</div>
+    </div>
+    <div id="statusHint" class="hidden">...</div>
+    <div class="input-bar">
+      <div class="input-inner">
+        <input id="chatInput" placeholder="Type your message" disabled
+          onkeydown="if(event.key==='Enter') send()">
+        <button id="micBtn" onclick="toggleMic()" disabled>🎤</button>
+        <button id="sendBtn" onclick="send()" disabled>
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { TalkingHead } from 'talkinghead';
+
+// ── Config ──────────────────────────────────────────────────────────────────
+const AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
+const IMAGES = [
+  'https://m.media-amazon.com/images/I/61Y7PMrJNnL.jpg',
+  'https://i.ebayimg.com/images/g/W5UAAOSwo85myi0N/s-l1200.jpg',
+  'https://img.freepik.com/premium-photo/metal-trash-bin-from-paper-isolated-white_392895-139923.jpg',
+  'https://thumbs.dreamstime.com/b/overflowing-trash-can-filled-various-types-garbage-waste-isolated-transparent-white-background-png-file-351698555.jpg',
+  'https://t4.ftcdn.net/jpg/18/07/57/31/360_F_1807573150_Lf2SkiqR4oNXeo2c7cqbiHIee9CQGta1.jpg'
+];
+
+// ── State ────────────────────────────────────────────────────────────────────
+let empathy = 'yes', outcome = 'positive';
+let steps = [], stepIdx = 0, lastResp = '';
+let inputOn = false, isSpeaking = false;
+let head = null, previewHead = null;
+let recog = null, listening = false;
+let audioEnabled = true;
+
+// ── Selectors ────────────────────────────────────────────────────────────────
+window.setEmpathy = e => {
+  empathy = e;
+  document.getElementById('eYes').classList.toggle('on', e==='yes');
+  document.getElementById('eNo').classList.toggle('on', e==='no');
+};
+window.setOutcome = o => {
+  outcome = o;
+  document.getElementById('oPos').classList.toggle('on', o==='positive');
+  document.getElementById('oNeg').classList.toggle('on', o==='negative');
+};
+
+// ── Build steps ───────────────────────────────────────────────────────────────
+function buildSteps() {
+  const common = [
+    { a: "Hallo! I'm Anna 👋. Welcome to our test today! I'll be here to guide you through every step." },
+    { a: "Don't worry, it won't take long, and I'll make sure it's clear and easy!" },
+    { a: 'Are you ready to get started? 🚀', wait: true },
+    { a: 'Perfect ✨! Oke, so here\'s what we\'ll have to do together:' },
+    { html: '<ol><li>You\'ll see <strong>30 images</strong>, each showing a trash can.</li><li>Your job is to <strong>estimate how full each trash can is, as a percentage from 0 to 100</strong>.</li></ol>' },
+    { a: 'Alright, enough talking! Shall we warm up with the first image?', wait: true },
+    { a: 'Oke nice! 😊' },
+    { a: "Here\'s our <strong>first image!</strong>", isHtml: true },
+    { img: 0 },
+    { a: 'How full do you think this trash can is?', wait: true },
+    { a: 'Got it, {r}% 👍. Thanks for that!' },
+    { a: 'Your answer is recorded. Let\'s move to the next one ➡️.' },
+    { a: "Here\'s <strong>Image 2</strong>", isHtml: true },
+    { img: 1 },
+    { a: 'What do you think?', wait: true },
+    { a: 'Alright, {r}% noted!' },
+    { a: '<strong>Image 3</strong> coming up 👇!', isHtml: true },
+    { img: 2 },
+    { a: 'How full does this one seem?', wait: true },
+    { a: 'Okay, {r}%. Thanks! Let\'s keep going.' },
+    { a: "Here\'s <strong>image 4</strong>", isHtml: true },
+    { img: 3 },
+    { a: 'Your estimate?', wait: true },
+    { a: '{r}%, got it!' },
+    { a: '<strong>Image 5</strong> now!', isHtml: true },
+    { img: 4 },
+    { a: 'What would you say?', wait: true },
+    { a: '{r}% is recorded!' },
+    // Evaluation
+    { a: 'You\'ve finished this part of the task 🎉. Great job putting in the effort! 🌟' },
+    { a: 'Alright, I\'ve sent all your answers to the system for analysis. The system will handle the evaluation.' },
+    { a: 'I\'m just here to guide you through the process and share the results with you 😊' },
+    { pause: 3000 },
+    { a: 'Alright, I\'ve received the results now.' },
+  ];
+
+  // Outcome messages (same for both empathy conditions)
+  const posResult = [
+    { a: 'According to the system report, <strong>all 10 control images met the required standard</strong> 🎉 Your data can be fully used for the model.', isHtml: true },
+    { a: "As a result, you\'ll <strong>receive the full bonus of 3€</strong>, in addition to the base payment of 3€ 💰.", isHtml: true },
+  ];
+  const negResult = [
+    { a: 'According to the system report, <strong>6 out of 10 control images did not meet the required standard</strong> 😔. Unfortunately, your data can\'t be used for the model.', isHtml: true },
+    { a: 'As a result, the <strong>3€ bonus cannot be awarded</strong> 😔, and you will <strong>receive only the base payment of 3€</strong>.', isHtml: true },
+  ];
+
+  // Empathy closing message (only in empathy condition)
+  const empathyMsg = empathy === 'yes'
+    ? (outcome === 'positive'
+        ? { a: 'I really appreciate the effort you put into the task, and it clearly paid off 🙏' }
+        : { a: 'I really appreciate the effort you put into the task, and I\'m sorry this result is disappointing 🙏' })
+    : null;
+
+  const closing = [
+    ...(empathyMsg ? [empathyMsg] : []),
+    { a: 'Thank you so much for participating. I truly hope you have a lovely day ahead!' },
+    { a: 'Goodbye! 👋', end: true }
+  ];
+
+  const result = outcome === 'positive' ? posResult : negResult;
+  return [...common, ...result, ...closing];
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+function stripEmoji(t) {
+  return t.replace(/<[^>]*>/g,'')
+    .replace(/[\u{1F300}-\u{1FFFF}]/gu,'')
+    .replace(/[\u{2600}-\u{27BF}]/gu,'')
+    .replace(/[^\x00-\x7F]/g,'').trim();
+}
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+async function loadAvatar(canvas, preview=false) {
+  const h = new TalkingHead(canvas, {
+    ttsEndpoint: null,
+    cameraView: 'upper',
+    cameraDistance: preview ? 0.55 : 0.30,
+    cameraX: preview ? 0 : -0.04,
+    cameraY: 0,
+    lipsyncModules: ['en']
+  });
+  await h.showAvatar({ url: AVATAR_URL, body: 'F', avatarMood: 'happy', lipsyncLang: 'en' });
+  setInterval(() => { if(Math.random()>0.5) try{h.playGesture('blink');}catch(e){} }, 3000);
+  return h;
+}
+
+// Mouth animation using jawOpen morph
+function startMouthAnim() {
+  return setInterval(() => {
+    if (!head || !isSpeaking) return;
+    try {
+      const d = head.avatar?.morphTargetDictionary;
+      const inf = head.avatar?.morphTargetInfluences;
+      if (d && inf) {
+        const idx = d['jawOpen'] ?? d['mouthOpen'] ?? d['viseme_aa'];
+        if (idx !== undefined) inf[idx] = 0.2 + Math.random() * 0.5;
+      }
+    } catch(e) {}
+  }, 50);
+}
+function stopMouthAnim(timer) {
+  clearInterval(timer);
+  try {
+    const d = head.avatar?.morphTargetDictionary;
+    const inf = head.avatar?.morphTargetInfluences;
+    if (d && inf) {
+      const idx = d['jawOpen'] ?? d['mouthOpen'] ?? d['viseme_aa'];
+      if (idx !== undefined) inf[idx] = 0;
+    }
+  } catch(e) {}
+}
+
+// ── TTS ───────────────────────────────────────────────────────────────────────
+async function speak(text) {
+  const clean = stripEmoji(text);
+  if (!clean || !audioEnabled) {
+    // just animate mouth for duration estimate
+    const dur = Math.max(clean.split(' ').length * 350, 800);
+    isSpeaking = true;
+    const t = startMouthAnim();
+    await delay(dur);
+    stopMouthAnim(t);
+    isSpeaking = false;
+    return;
+  }
+  return new Promise(resolve => {
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v => v.lang.startsWith('en') &&
+      (v.name.includes('Samantha')||v.name.includes('Karen')||v.name.includes('Victoria')||v.name.includes('Zira')))
+      || voices.find(v => v.lang.startsWith('en'));
+    const utt = new SpeechSynthesisUtterance(clean);
+    if (v) utt.voice = v;
+    utt.rate = 0.95; utt.pitch = 1.0;
+    let timer;
+    utt.onstart = () => { isSpeaking = true; timer = startMouthAnim(); };
+    utt.onend = () => { stopMouthAnim(timer); isSpeaking = false; resolve(); };
+    utt.onerror = () => { if(timer) stopMouthAnim(timer); isSpeaking = false; resolve(); };
+    speechSynthesis.speak(utt);
+  });
+}
+
+// ── Messages ───────────────────────────────────────────────────────────────────
+function addAgent(text, isHtml=false) {
+  const msgs = $('msgs');
+  const d = document.createElement('div');
+  d.className = 'b-agent';
+  d.innerHTML = isHtml ? text : text.replace(/\n/g,'<br>');
+  msgs.insertBefore(d, $('typing'));
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addUser(text) {
+  const msgs = $('msgs');
+  const d = document.createElement('div');
+  d.className = 'b-user'; d.textContent = text;
+  msgs.insertBefore(d, $('typing'));
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addImage(url) {
+  const msgs = $('msgs');
+  const d = document.createElement('div');
+  d.className = 'b-image';
+  if (url) {
+    d.innerHTML = `<img src="${url}" alt="Trash can"><div class="expand" onclick="window.open('${url}')">⤢</div>`;
+  } else {
+    d.textContent = 'Trash can image';
+  }
+  msgs.insertBefore(d, $('typing'));
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping(on) {
+  $('typing').classList.toggle('hidden', !on);
+  $('statusHint').classList.toggle('hidden', !on);
+  if (on) $('statusHint').textContent = '...';
+}
+
+function setInput(on) {
+  inputOn = on;
+  $('chatInput').disabled = !on;
+  $('sendBtn').disabled = !on;
+  $('micBtn').disabled = !on;
+  if (on) $('chatInput').focus();
+}
+
+// ── Flow ──────────────────────────────────────────────────────────────────────
+async function nextStep() {
+  if (stepIdx >= steps.length) { setInput(false); $('chatEnded').classList.remove('hidden'); return; }
+  const s = steps[stepIdx++];
+
+  if (s.pause) { showTyping(true); await delay(s.pause); showTyping(false); nextStep(); return; }
+  if (s.img !== undefined) {
+    showTyping(true); await delay(500); showTyping(false);
+    addImage(IMAGES[s.img]); await delay(300); nextStep(); return;
+  }
+
+  if (s.a || s.html) {
+    showTyping(true); await delay(500); showTyping(false);
+    const raw = (s.a || s.html).replace(/\{r\}/g, lastResp);
+    addAgent(raw, !!(s.html || s.isHtml));
+    await speak(raw);
+    await delay(150);
+  }
+
+  if (s.end) { setInput(false); $('chatEnded').classList.remove('hidden'); return; }
+  if (s.wait) { setInput(true); } else { nextStep(); }
+}
+
+window.send = function() {
+  if (!inputOn) return;
+  const t = $('chatInput').value.trim();
+  if (!t) return;
+  lastResp = t; $('chatInput').value = '';
+  addUser(t); setInput(false);
+  setTimeout(nextStep, 300);
+};
+
+// ── Speech recognition ────────────────────────────────────────────────────────
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  recog = new SR(); recog.lang='en-US'; recog.continuous=false; recog.interimResults=false;
+  recog.onresult = e => {
+    $('chatInput').value = e.results[0][0].transcript;
+    listening = false; $('micBtn').classList.remove('on');
+  };
+  recog.onerror = () => { listening=false; $('micBtn').classList.remove('on'); };
+}
+window.toggleMic = function() {
+  if (!recog) { alert('Use Chrome for voice input.'); return; }
+  if (listening) { recog.stop(); } else { $('chatInput').value=''; recog.start(); listening=true; $('micBtn').classList.add('on'); }
+};
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+window.startChat = async function() {
+  steps = buildSteps();
+  $('welcome').classList.add('hidden');
+  $('app').classList.add('on');
+  setInput(false);
+  head = await loadAvatar($('avatarContainer'), false);
+  initSpeech();
+  speechSynthesis.getVoices();
+  await delay(400);
+  stepIdx = 0; nextStep();
+};
+
+// ── Init preview avatar ───────────────────────────────────────────────────────
+(async () => {
+  try {
+    speechSynthesis.getVoices();
+    previewHead = await loadAvatar($('wCanvas'), true);
+    $('startBtn').disabled = false;
+    $('startBtn').textContent = 'Start Task';
+  } catch(e) {
+    $('startBtn').disabled = false;
+    $('startBtn').textContent = 'Start Task';
+  }
+})();
+</script>
+</body>
+</html>

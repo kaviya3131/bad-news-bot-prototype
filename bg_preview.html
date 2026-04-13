@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Background Preview Tool</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1d2e; color: white; padding: 24px; min-height: 100vh;
+    }
+
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    p { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px; }
+
+    /* URL inputs */
+    .url-section { margin-bottom: 20px; }
+    .url-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .url-row label {
+      font-size: 13px; color: rgba(255,255,255,0.7);
+      min-width: 60px; font-weight: 500;
+    }
+    .url-row input {
+      flex: 1; padding: 9px 14px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08); color: white;
+      font-size: 13px; outline: none;
+    }
+    .url-row input::placeholder { color: rgba(255,255,255,0.3); }
+    .url-row input:focus { border-color: rgba(255,255,255,0.5); }
+
+    /* Controls */
+    .controls {
+      display: flex; gap: 8px; margin-bottom: 16px;
+      align-items: center; flex-wrap: wrap;
+    }
+    .sel-btn {
+      padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.08); color: white;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .sel-btn:hover { background: rgba(255,255,255,0.15); }
+    .sel-btn.active { background: #2d4eaa; border-color: #2d4eaa; }
+
+    .overlay-wrap {
+      display: flex; align-items: center; gap: 10px;
+      margin-left: auto;
+    }
+    .overlay-wrap label { font-size: 13px; color: rgba(255,255,255,0.6); }
+    input[type=range] {
+      width: 120px; cursor: pointer; accent-color: #2d4eaa;
+    }
+    .overlay-wrap span {
+      font-size: 13px; color: rgba(255,255,255,0.8);
+      min-width: 36px; text-align: right;
+    }
+
+    /* Preview box */
+    .preview-box {
+      position: relative; width: 100%; height: 420px;
+      border-radius: 14px; overflow: hidden;
+      background: #2d3240;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    #bgLayer {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      background-repeat: no-repeat;
+      transition: background-image 0.3s;
+    }
+
+    #overlayLayer {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.30);
+      transition: background 0.2s;
+    }
+
+    /* Avatar side */
+    .avatar-side {
+      position: absolute; left: 0; top: 0;
+      width: 50%; height: 100%;
+      overflow: hidden;
+    }
+    #annaCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+    .avatar-loading {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.4); font-size: 13px;
+    }
+
+    /* Chat side */
+    .chat-side {
+      position: absolute; right: 0; top: 0;
+      width: 50%; height: 100%;
+      display: flex; flex-direction: column;
+      justify-content: flex-end;
+      padding: 18px 16px 16px;
+      gap: 8px;
+    }
+
+    .bubble {
+      background: rgba(255,255,255,0.95);
+      border-radius: 14px 14px 14px 3px;
+      padding: 10px 14px; font-size: 13px;
+      color: #1a202c; line-height: 1.55;
+      max-width: 92%; align-self: flex-start;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .bubble.user {
+      background: #2d4eaa; color: white;
+      border-radius: 14px 14px 3px 14px;
+      align-self: flex-end;
+    }
+
+    .input-mock {
+      display: flex; align-items: center;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 26px; padding: 8px 8px 8px 16px;
+      gap: 8px; margin-top: 4px;
+    }
+    .input-mock span { flex: 1; font-size: 12px; color: rgba(255,255,255,0.4); }
+    .send-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #2d4eaa; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .send-btn svg { fill: white; width: 13px; height: 13px; }
+
+    /* Label */
+    .label-bar {
+      display: flex; justify-content: space-between;
+      margin-top: 12px;
+    }
+    .current-label { font-size: 13px; color: rgba(255,255,255,0.7); }
+    .hint { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+    /* Apply button */
+    .apply-note {
+      margin-top: 20px; padding: 14px 18px;
+      background: rgba(255,255,255,0.06); border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6;
+    }
+    .apply-note strong { color: white; }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "talkinghead": "https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/modules/talkinghead.mjs"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <h1>Background Preview Tool</h1>
+  <p>Paste up to 3 image URLs below, then click between them to compare how they look behind the embodied chatbot.</p>
+
+  <div class="url-section">
+    <div class="url-row">
+      <label>Image 1</label>
+      <input id="url1" type="text" placeholder="Paste image URL here..." oninput="refresh()">
+    </div>
+    <div class="url-row">
+      <label>Image 2</label>
+      <input id="url2" type="text" placeholder="Paste image URL here..." oninput="refresh()">
+    </div>
+    <div class="url-row">
+      <label>Image 3</label>
+      <input id="url3" type="text" placeholder="Paste image URL here..." oninput="refresh()">
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="sel-btn active" id="btn0" onclick="pick(0)">Dark solid</button>
+    <button class="sel-btn" id="btn1" onclick="pick(1)">Image 1</button>
+    <button class="sel-btn" id="btn2" onclick="pick(2)">Image 2</button>
+    <button class="sel-btn" id="btn3" onclick="pick(3)">Image 3</button>
+
+    <div class="overlay-wrap">
+      <label>Darkness overlay</label>
+      <input type="range" id="overlaySlider" min="0" max="85" value="30" step="1" oninput="updateOverlay()">
+      <span id="overlayVal">30%</span>
+    </div>
+  </div>
+
+  <div class="preview-box">
+    <div id="bgLayer"></div>
+    <div id="overlayLayer"></div>
+
+    <div class="avatar-side">
+      <div id="annaCanvas"></div>
+      <div class="avatar-loading" id="avatarLoading">Loading Anna...</div>
+    </div>
+
+    <div class="chat-side">
+      <div class="bubble">Hallo! I'm Anna 👋. Welcome to our test today! I'll be here to guide you through every step.</div>
+      <div class="bubble">Don't worry, it won't take long, and I'll make sure it's clear and easy!</div>
+      <div class="bubble">Are you ready to get started? 🚀</div>
+      <div class="bubble user">Ok, start</div>
+      <div class="bubble">Perfect ✨! Here's our <strong>first image!</strong></div>
+      <div class="input-mock">
+        <span>Type your message</span>
+        <button class="send-btn">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="label-bar">
+    <span class="current-label" id="currentLabel">Currently showing: Dark solid (default)</span>
+    <span class="hint">Tip: increase darkness overlay for better text contrast</span>
+  </div>
+
+<script>
+  let current = 0;
+  const names = ['Dark solid (default)', 'Image 1', 'Image 2', 'Image 3'];
+
+  function getUrl(n) {
+    return document.getElementById('url' + n)?.value.trim() || '';
+  }
+
+  function pick(n) {
+    current = n;
+    document.querySelectorAll('.sel-btn').forEach((b, i) => {
+      b.classList.toggle('active', i === n);
+    });
+    applyBg();
+    document.getElementById('currentLabel').textContent = 'Currently showing: ' + names[n];
+  }
+
+  function refresh() {
+    applyBg();
+  }
+
+  function applyBg() {
+    const layer = document.getElementById('bgLayer');
+    if (current === 0 || !getUrl(current)) {
+      layer.style.backgroundImage = 'none';
+    } else {
+      layer.style.backgroundImage = "url('" + getUrl(current) + "')";
+    }
+  }
+
+  function updateOverlay() {
+    const val = document.getElementById('overlaySlider').value;
+    document.getElementById('overlayVal').textContent = val + '%';
+    document.getElementById('overlayLayer').style.background = 'rgba(0,0,0,' + (val / 100) + ')';
+  }
+</script>
+
+<script type="module">
+import { TalkingHead } from 'talkinghead';
+
+const AVATAR_URL = 'https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.7/avatars/brunette.glb';
+
+async function loadAnna() {
+  try {
+    const head = new TalkingHead(document.getElementById('annaCanvas'), {
+      ttsEndpoint: null,
+      cameraView: 'upper',
+      cameraDistance: 0.30,
+      cameraX: -0.04,
+      cameraY: 0,
+      lipsyncModules: ['en']
+    });
+    await head.showAvatar({ url: AVATAR_URL, body: 'F', avatarMood: 'happy', lipsyncLang: 'en' });
+    document.getElementById('avatarLoading').style.display = 'none';
+    // Occasional blink
+    setInterval(() => { if (Math.random() > 0.5) try { head.playGesture('blink'); } catch(e) {} }, 3000);
+  } catch(e) {
+    document.getElementById('avatarLoading').textContent = 'Avatar unavailable';
+  }
+}
+
+loadAnna();
+</script>
+</body>
+</html>

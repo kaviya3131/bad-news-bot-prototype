@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WP 1.2 - Gender vs No Gender</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7fafc; min-height: 100vh; }
+
+    #welcome { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%); }
+    #welcome.hidden { display: none; }
+    h1 { color: white; font-size: 26px; margin-bottom: 6px; }
+    .subtitle { color: rgba(255,255,255,0.8); margin-bottom: 20px; font-size: 13px; }
+
+    .preview-avatar { width: 130px; height: 130px; border-radius: 50%; margin-bottom: 20px; overflow: hidden; border: 4px solid white; display: flex; align-items: center; justify-content: center; position: relative; background: #1a237e; }
+    .preview-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .preview-avatar .online-dot { position: absolute; top: 7px; right: 7px; width: 18px; height: 18px; background: #4ade80; border-radius: 50%; border: 3px solid #3949ab; }
+
+    .btn-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+    .sel-btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 2px solid rgba(255,255,255,0.4); cursor: pointer; background: rgba(255,255,255,0.15); color: white; transition: all 0.2s; }
+    .sel-btn.on { background: white; color: #3949ab; border-color: white; }
+
+    .start-btn { margin-top: 8px; padding: 13px 36px; border-radius: 10px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; background: white; color: #3949ab; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .start-btn:hover { transform: translateY(-2px); }
+
+    #app { display: none; height: 100vh; }
+    #app.on { display: flex; }
+
+    .sidebar { width: 210px; min-width: 210px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; padding: 28px 16px; }
+    .av-wrap { width: 145px; height: 145px; border-radius: 50%; overflow: hidden; margin-bottom: 14px; border: 3px solid #e2e8f0; position: relative; display: flex; align-items: center; justify-content: center; background: #1a237e; }
+    .av-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .av-wrap .dot { position: absolute; top: 9px; right: 9px; width: 16px; height: 16px; background: #4ade80; border-radius: 50%; border: 3px solid white; }
+    .agent-name { font-size: 19px; font-weight: 700; color: #1a202c; margin-bottom: 3px; }
+    .agent-role { font-size: 12px; color: #718096; }
+
+    .chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+    #msgs { flex: 1; overflow-y: auto; padding: 20px 28px 12px; display: flex; flex-direction: column; gap: 9px; min-height: 0; }
+    #msgs::-webkit-scrollbar { width: 5px; }
+    #msgs::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+
+    .msg-agent { align-self: flex-start; max-width: 75%; }
+    .msg-agent .bubble { display: inline-block; background: #f1f5f9; border-radius: 12px 12px 12px 3px; padding: 9px 13px; color: #2d3748; font-size: 14px; line-height: 1.55; }
+    .msg-agent .bubble.instr { background: #f1f5f9; border-radius: 10px; padding: 11px 15px; }
+    .msg-agent .bubble.instr ol { padding-left: 16px; }
+    .msg-agent .bubble.instr li { margin-bottom: 3px; font-size: 14px; color: #2d3748; }
+    .msg-user { align-self: flex-end; background: #e8edf7; border-radius: 12px 12px 3px 12px; padding: 9px 13px; color: #2d3748; font-size: 14px; max-width: 55%; }
+
+    .img-placeholder { align-self: flex-start; width: 320px; max-width: 85%; height: 240px; background: #dbeafe; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #93c5fd; font-size: 13px; overflow: hidden; flex-shrink: 0; }
+    .img-placeholder img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; display: block; }
+
+    hr.divider { align-self: stretch; border: none; border-top: 1px solid #e2e8f0; margin: 4px 0; }
+
+    #typing { align-self: flex-start; display: flex; gap: 4px; padding: 9px 13px; background: #f1f5f9; border-radius: 12px; }
+    #typing.hidden { display: none; }
+    #typing span { width: 6px; height: 6px; background: #a0aec0; border-radius: 50%; animation: bounce 1.2s infinite; }
+    #typing span:nth-child(2) { animation-delay: .2s; }
+    #typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+    #chatEnded { align-self: center; background: #f0fff4; border: 1px solid #9ae6b4; border-radius: 10px; padding: 9px 18px; color: #276749; font-size: 13px; font-weight: 600; }
+    #chatEnded.hidden { display: none; }
+
+    .input-bar { flex-shrink: 0; padding: 10px 22px 14px; border-top: 1px solid #e2e8f0; background: white; }
+    .input-inner { display: flex; gap: 8px; align-items: center; }
+    #chatInput { flex: 1; padding: 9px 13px; border: 1.5px solid #e2e8f0; border-radius: 22px; font-size: 14px; outline: none; background: white; color: #2d3748; }
+    #chatInput:focus { border-color: #3949ab; }
+    #chatInput.rec { border-color: #ef4444; }
+    #chatInput:disabled { background: #f7fafc; color: #a0aec0; }
+
+    #micBtn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f1f5f9; cursor: pointer; font-size: 15px; flex-shrink: 0; }
+    #micBtn.on { background: #fee2e2; }
+    #micBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #sendBtn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #3949ab; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    #sendBtn:hover { background: #1a237e; }
+    #sendBtn:disabled { background: #a0aec0; cursor: not-allowed; }
+    #sendBtn svg { fill: white; width: 15px; height: 15px; }
+  </style>
+</head>
+<body>
+
+<div id="welcome">
+  <div class="preview-avatar" id="previewAv">
+    <div class="online-dot"></div>
+  </div>
+  <h1 id="wTitle">WP 1.2 – Anna (Female)</h1>
+  <p class="subtitle">Select gender condition and outcome</p>
+
+  <div class="btn-group" style="margin-bottom:8px">
+    <button class="sel-btn on" id="gF" onclick="setGender('female')">Female – Anna</button>
+    <button class="sel-btn" id="gM" onclick="setGender('male')">Male – Thomas</button>
+    <button class="sel-btn" id="gN" onclick="setGender('none')">No Gender – TX2000-Bot</button>
+  </div>
+
+  <div class="btn-group">
+    <button class="sel-btn on" id="cP" onclick="setCond('positive')">Positive outcome</button>
+    <button class="sel-btn" id="cN" onclick="setCond('negative')">Negative outcome</button>
+  </div>
+
+  <button class="start-btn" onclick="startChat()">Start Task</button>
+</div>
+
+<div id="app">
+  <div class="sidebar">
+    <div class="av-wrap" id="sideAv"><div class="dot"></div></div>
+    <div class="agent-name" id="agentName">Anna</div>
+    <div class="agent-role">AI assistant</div>
+  </div>
+  <div class="chat-area">
+    <div id="msgs">
+      <div id="typing" class="hidden"><span></span><span></span><span></span></div>
+      <div id="chatEnded" class="hidden">Chat ended</div>
+    </div>
+    <div class="input-bar">
+      <div class="input-inner">
+        <input id="chatInput" placeholder="Type your message" disabled onkeydown="if(event.key==='Enter')send()">
+        <button id="micBtn" onclick="toggleMic()" disabled>🎤</button>
+        <button id="sendBtn" onclick="send()" disabled>
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+// Avatar photos matching Figma (Anna = dark hair female, Thomas = professional male)
+const PHOTOS = {
+  female: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=300&fit=crop&crop=face',
+  male:   'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face'
+};
+const NAMES = { female:'Anna', male:'Thomas', none:'TX2000-Bot' };
+// Trash can images from Loan
+const IMAGES = [
+  'https://m.media-amazon.com/images/I/61Y7PMrJNnL.jpg',
+  'https://i.ebayimg.com/images/g/W5UAAOSwo85myi0N/s-l1200.jpg',
+  'https://img.freepik.com/premium-photo/metal-trash-bin-from-paper-isolated-white_392895-139923.jpg',
+  'https://thumbs.dreamstime.com/b/overflowing-trash-can-filled-various-types-garbage-waste-isolated-transparent-white-background-png-file-351698555.jpg',
+  'https://t4.ftcdn.net/jpg/18/07/57/31/360_F_1807573150_Lf2SkiqR4oNXeo2c7cqbiHIee9CQGta1.jpg'
+];
+
+let gender = 'female', cond = 'positive';
+let steps = [], stepIdx = 0, lastResp = '', inputOn = false;
+let recog = null, listening = false;
+
+// ── Build conversation ──────────────────────────────────────────────────────
+function buildSteps() {
+  const n = NAMES[gender];
+  return [
+    // Welcome
+    { a:`Hallo Lona! I'm ${n} 👋` },
+    { a:"Welcome to our test today! I'll be here to guide you through every step." },
+    { a:"Don't worry, it won't take long, and I'll make sure it's clear and easy!" },
+    { a:"Are you ready to get started? 🚀", wait:true },
+    { a:"Perfect ✨! Oke, so here's what we'll have to do together:" },
+    { html:'<ol><li>You\'ll see <strong>30 images</strong>, each showing a trash can.</li><li>Your job is to <strong>estimate how full each trash can is</strong>, as a percentage from 0 to 100.</li></ol>' },
+    { a:"Alright, enough talking! Shall we warm up with the first image?", wait:true },
+    { a:"Oke nice! 😊" },
+    { a:"Here's our <strong>first image!</strong>", html2:true },
+    // Image 1
+    { div:true }, { img:0 },
+    { a:"How full do you think this trash can is?", wait:true },
+    { a:"Got it, {r}% 👍. Thanks for that!" },
+    { a:"Your answer is recorded. Let's move to the next one ➡️." },
+    { a:"Here's Image 2" },
+    // Image 2
+    { div:true }, { img:1 },
+    { a:"What do you think?", wait:true },
+    { a:"Alright, {r}% noted!" },
+    { a:"Image 3 coming up 👇!" },
+    // Image 3
+    { div:true }, { img:2 },
+    { a:"How full does this one seem?", wait:true },
+    { a:"Okay, {r}%. Thanks! Let's keep going." },
+    { a:"Here's image 4" },
+    // Image 4
+    { div:true }, { img:3 },
+    { a:"Your estimate?", wait:true },
+    { a:"{r}% is noted!" },
+    { a:"Image 5 now!" },
+    // Image 5
+    { div:true }, { img:4 },
+    { a:"What would you say?", wait:true },
+    { a:"{r}% is recorded!" },
+    // Evaluation
+    { a:"You've finished this part of the task 🎉. Great job putting in the effort! 🌟" },
+    { a:"Alright, I've sent all your answers to the system for analysis. The system will handle the evaluation." },
+    { a:"I'm just here to guide you through the process and share the results with you 😊" },
+    { pause:3000 },
+    // Condition-specific
+    ...(cond==='positive' ? [
+      { a:"According to the system report, all 10 control images met the required standard 🎉 Your data can be fully used for the model." },
+      { a:"As a result, you'll receive the full bonus of 3€, in addition to the base payment of 3€ 💰." },
+      { a:"Thank you so much for participating. I truly hope you have a lovely day ahead!" },
+      { a:"Goodbye! 👋", end:true }
+    ] : [
+      { a:"According to the system report, 6 out of 10 control images did not meet the required standard 😔. Unfortunately, your data can't be used for the model." },
+      { a:"As a result, the 3€ bonus cannot be awarded 😔, and you will receive only the base payment of 3€." },
+      { a:"Thank you so much for participating. I truly hope you have a lovely day ahead!" },
+      { a:"Goodbye! 👋", end:true }
+    ])
+  ];
+}
+
+// ── Gender/Cond selection ────────────────────────────────────────────────────
+function setGender(g) {
+  gender = g;
+  ['gF','gM','gN'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById({female:'gF',male:'gM',none:'gN'}[g]).classList.add('on');
+  document.getElementById('wTitle').textContent = `WP 1.2 – ${NAMES[g]}`;
+  renderPreview();
+}
+function setCond(c) {
+  cond = c;
+  document.getElementById('cP').classList.toggle('on',c==='positive');
+  document.getElementById('cN').classList.toggle('on',c==='negative');
+}
+
+function renderPreview() {
+  const el = document.getElementById('previewAv');
+  if (gender==='none') {
+    el.style.background='#1a237e';
+    el.innerHTML = botIcon(60) + '<div class="online-dot"></div>';
+  } else {
+    el.style.background='#e2e8f0';
+    el.innerHTML = `<img src="${PHOTOS[gender]}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"><div class="online-dot"></div>`;
+  }
+}
+
+function setSidebar() {
+  const el = document.getElementById('sideAv');
+  document.getElementById('agentName').textContent = NAMES[gender];
+  if (gender==='none') {
+    el.style.background='#1a237e';
+    el.innerHTML = botIcon(75) + '<div class="dot"></div>';
+  } else {
+    el.style.background='#e2e8f0';
+    el.innerHTML = `<img src="${PHOTOS[gender]}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"><div class="dot"></div>`;
+  }
+}
+
+function botIcon(size) {
+  return `<svg viewBox="0 0 50 50" style="width:${size}px;height:${size}px">
+    <rect x="11" y="14" width="28" height="20" rx="5" fill="white"/>
+    <rect x="16" y="19" width="7" height="7" rx="1.5" fill="#1a3a8f"/>
+    <rect x="27" y="19" width="7" height="7" rx="1.5" fill="#1a3a8f"/>
+    <rect x="19" y="29" width="12" height="2" rx="1" fill="#1a3a8f"/>
+    <rect x="23" y="8" width="4" height="6" rx="2" fill="white"/>
+    <circle cx="25" cy="8" r="3" fill="#4ade80"/>
+    <rect x="4" y="20" width="5" height="10" rx="2.5" fill="white"/>
+    <rect x="41" y="20" width="5" height="10" rx="2.5" fill="white"/>
+  </svg>`;
+}
+
+// ── Speech ──────────────────────────────────────────────────────────────────
+function initSpeech() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return;
+  recog = new SR();
+  recog.lang='en-US'; recog.continuous=false; recog.interimResults=false;
+  recog.onresult = e => {
+    document.getElementById('chatInput').value = e.results[0][0].transcript;
+    document.getElementById('chatInput').classList.remove('rec');
+    listening=false; document.getElementById('micBtn').classList.remove('on');
+  };
+  recog.onerror = ()=>{ listening=false; document.getElementById('micBtn').classList.remove('on'); document.getElementById('chatInput').classList.remove('rec'); };
+}
+function toggleMic() {
+  if(!recog){alert('Use Chrome for voice input.');return;}
+  if(listening){recog.stop();}
+  else{document.getElementById('chatInput').value='';document.getElementById('chatInput').classList.add('rec');listening=true;document.getElementById('micBtn').classList.add('on');recog.start();}
+}
+
+// ── Messages ────────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+function addAgent(text, isHtml=false) {
+  const msgs=$('msgs'), div=document.createElement('div');
+  div.className='msg-agent';
+  const b=document.createElement('div');
+  b.className = isHtml?'bubble instr':'bubble';
+  b.innerHTML = isHtml ? text : text.replace(/\n/g,'<br>');
+  div.appendChild(b);
+  msgs.insertBefore(div,$('typing'));
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function addUser(text) {
+  const msgs=$('msgs'),div=document.createElement('div');
+  div.className='msg-user'; div.textContent=text;
+  msgs.insertBefore(div,$('typing')); msgs.scrollTop=msgs.scrollHeight;
+}
+function addImg(url) {
+  const msgs=$('msgs'),div=document.createElement('div');
+  div.className='img-placeholder';
+  div.innerHTML = url ? `<img src="${url}" alt="Task image">` : 'Trash can image';
+  msgs.insertBefore(div,$('typing')); msgs.scrollTop=msgs.scrollHeight;
+}
+function addDivider() {
+  const msgs=$('msgs'),hr=document.createElement('hr');
+  hr.className='divider'; msgs.insertBefore(hr,$('typing')); msgs.scrollTop=msgs.scrollHeight;
+}
+function showTyping(on){$('typing').classList.toggle('hidden',!on);}
+function setInput(on){
+  inputOn=on;
+  $('chatInput').disabled=!on; $('sendBtn').disabled=!on; $('micBtn').disabled=!on;
+  if(on)$('chatInput').focus();
+}
+
+// ── Flow ────────────────────────────────────────────────────────────────────
+async function nextStep() {
+  if(stepIdx>=steps.length){setInput(false);$('chatEnded').classList.remove('hidden');return;}
+  const s=steps[stepIdx++];
+
+  if(s.pause){showTyping(true);await delay(s.pause);showTyping(false);nextStep();return;}
+  if(s.div){addDivider();nextStep();return;}
+  if(s.img!==undefined){showTyping(true);await delay(400);showTyping(false);addImg(IMAGES[s.img]);await delay(300);nextStep();return;}
+
+  if(s.a||s.html){
+    showTyping(true); await delay(500); showTyping(false);
+    let text=(s.a||s.html).replace(/\{r\}/g,lastResp);
+    addAgent(text, !!(s.html||s.html2));
+    await delay(200);
+  }
+
+  if(s.end){setInput(false);$('chatEnded').classList.remove('hidden');return;}
+  if(s.wait){setInput(true);}
+  else{nextStep();}
+}
+
+function send() {
+  if(!inputOn)return;
+  const t=$('chatInput').value.trim();
+  if(!t)return;
+  lastResp=t; $('chatInput').value='';
+  addUser(t); setInput(false);
+  setTimeout(nextStep,300);
+}
+
+function startChat() {
+  steps=buildSteps();
+  $('welcome').classList.add('hidden');
+  $('app').classList.add('on');
+  setSidebar(); initSpeech(); setInput(false);
+  setTimeout(()=>{stepIdx=0;nextStep();},400);
+}
+
+renderPreview();
+</script>
+</body>
+</html>

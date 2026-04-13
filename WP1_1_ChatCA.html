@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WP 1.1 - Chat-based CA</title>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f7fafc; 
+      min-height: 100vh; 
+    }
+    
+    /* Welcome Screen */
+    #welcome { 
+      min-height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 24px;
+      background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+    }
+    #welcome.hidden { display: none; }
+    h1 { color: white; font-size: 28px; margin-bottom: 8px; }
+    .subtitle { color: rgba(255,255,255,0.8); margin-bottom: 24px; font-size: 14px; }
+    
+    .preview-icon {
+      width: 120px;
+      height: 120px;
+      background: #1a237e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .preview-icon svg {
+      width: 70px;
+      height: 70px;
+      fill: white;
+    }
+    .preview-icon .online-dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: #4ade80;
+      border-radius: 50%;
+      border: 3px solid #3949ab;
+    }
+    
+    .buttons { display: flex; gap: 10px; margin-bottom: 20px; }
+    .btn { 
+      padding: 10px 20px; 
+      border-radius: 8px; 
+      font-size: 14px; 
+      font-weight: 600; 
+      border: 2px solid transparent; 
+      cursor: pointer; 
+      background: rgba(255,255,255,0.2); 
+      color: white;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: rgba(255,255,255,0.3); }
+    .btn.on { background: white; color: #1a237e; }
+    
+    .start { 
+      padding: 14px 40px; 
+      background: white; 
+      color: #1a237e; 
+      border: none; 
+      border-radius: 8px; 
+      font-size: 16px; 
+      font-weight: 600; 
+      cursor: pointer; 
+    }
+    .start:disabled { opacity: 0.5; }
+    
+    /* Main App */
+    #app { display: none; min-height: 100vh; }
+    #app.on { display: flex; }
+    
+    /* Sidebar with Bot Icon */
+    .sidebar {
+      width: 280px;
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      flex-shrink: 0;
+    }
+    
+    .bot-icon {
+      width: 150px;
+      height: 150px;
+      background: #1a237e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .bot-icon svg {
+      width: 90px;
+      height: 90px;
+      fill: white;
+    }
+    .bot-icon .online-dot {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      background: #4ade80;
+      border-radius: 50%;
+      border: 3px solid white;
+    }
+    
+    .bot-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 4px;
+    }
+    .bot-role {
+      font-size: 14px;
+      color: #718096;
+    }
+    
+    /* Chat Area - FIXED LAYOUT */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #f7fafc;
+      height: 100vh;
+      min-height: 0;
+      overflow: hidden;
+    }
+    
+    .messages { 
+      flex: 1;
+      overflow-y: auto; 
+      padding: 24px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px;
+      min-height: 0;
+    }
+    .messages::-webkit-scrollbar { width: 6px; }
+    .messages::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+    
+    /* Message Bubbles - NO background for agent messages */
+    .msg { 
+      max-width: 70%; 
+      font-size: 15px; 
+      line-height: 1.6;
+    }
+    .msg.agent { 
+      align-self: flex-start; 
+      color: #1a202c;
+    }
+    .msg.user { 
+      align-self: flex-end; 
+      background: #e2e8f0;
+      color: #1a202c;
+      padding: 12px 18px;
+      border-radius: 20px;
+    }
+    
+    /* Image label - bigger text */
+    .msg.image-label {
+      align-self: flex-start;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-top: 8px;
+    }
+    
+    /* Question text */
+    .msg.question {
+      align-self: flex-start;
+      font-size: 15px;
+      color: #4a5568;
+    }
+    
+    /* Image only */
+    .msg.image-msg {
+      align-self: flex-start;
+      padding: 0;
+      background: transparent;
+      max-width: 100%;
+    }
+    .msg.image-msg img {
+      width: 320px;
+      max-width: 100%;
+      height: 240px;
+      object-fit: cover;
+      border-radius: 12px;
+      display: block;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Typing indicator */
+    .typing { 
+      display: flex; 
+      gap: 4px; 
+      padding: 12px 0; 
+      align-self: flex-start;
+    }
+    .typing.hidden { display: none; }
+    .typing span { 
+      width: 8px; 
+      height: 8px; 
+      background: #a0aec0; 
+      border-radius: 50%; 
+      animation: bounce 1.4s infinite; 
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+    
+    /* Input Area - FIXED at bottom */
+    .input-area { 
+      flex-shrink: 0;
+      padding: 16px 24px;
+      background: white;
+      border-top: 1px solid #e2e8f0;
+    }
+    .input-row { 
+      display: flex; 
+      gap: 12px; 
+      background: #f7fafc;
+      border: 1px solid #e2e8f0; 
+      border-radius: 24px; 
+      padding: 8px 8px 8px 20px;
+      align-items: center;
+    }
+    .input-row.rec { border-color: #fc8181; }
+    
+    .input-row input { 
+      flex: 1; 
+      background: none; 
+      border: none; 
+      color: #1a202c; 
+      font-size: 14px; 
+      outline: none; 
+    }
+    .input-row input::placeholder { color: #a0aec0; }
+    
+    .send { 
+      width: 40px; 
+      height: 40px; 
+      border: none; 
+      border-radius: 50%; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      background: #e2e8f0;
+      color: #718096;
+      transition: all 0.2s;
+    }
+    .send:hover {
+      background: #3949ab;
+      color: white;
+    }
+    .send svg { width: 18px; height: 18px; fill: currentColor; }
+    
+    .mic { 
+      width: 40px; 
+      height: 40px; 
+      border: none; 
+      border-radius: 50%; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      background: transparent;
+      color: #718096;
+      transition: all 0.2s;
+    }
+    .mic:hover { color: #3949ab; }
+    .mic.on { background: #fc8181; color: white; }
+    .mic svg { width: 20px; height: 20px; fill: currentColor; }
+    
+    .status-hint { 
+      text-align: center; 
+      color: #a0aec0; 
+      font-size: 12px; 
+      padding: 8px;
+    }
+    .status-hint.hidden { display: none; }
+
+    /* Bold text in messages */
+    .msg b, .msg strong { font-weight: 700; }
+    
+    /* Chat ended state */
+    .chat-ended {
+      text-align: center;
+      color: #718096;
+      font-size: 14px;
+      padding: 16px;
+      background: #f7fafc;
+      border-radius: 12px;
+    }
+    .chat-ended.hidden { display: none; }
+
+    /* Divider line before image sections */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: #e2e8f0;
+      margin: 16px 0 12px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div id="welcome">
+  <h1>WP 1.1 - Chat-based CA</h1>
+  <p class="subtitle">Bad News Bot Research Prototype</p>
+  <div class="preview-icon">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+    <div class="online-dot"></div>
+  </div>
+  <div class="buttons">
+    <button class="btn" id="btnPos">Good News</button>
+    <button class="btn on" id="btnNeg">Bad News</button>
+  </div>
+  <button class="start" id="startBtn">Start Task</button>
+</div>
+
+<div id="app">
+  <div class="sidebar">
+    <div class="bot-icon">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+      <div class="online-dot"></div>
+    </div>
+    <div class="bot-name">TX2000-Bot</div>
+    <div class="bot-role">AI assistant</div>
+  </div>
+  
+  <div class="chat-area">
+    <div class="messages" id="msgs">
+      <!-- messages appended here by JS -->
+      <div class="typing hidden" id="typing"><span></span><span></span><span></span></div>
+      <div class="chat-ended hidden" id="chatEnded">Chat ended</div>
+    </div>
+    <div class="input-area">
+      <div class="input-row" id="inputRow">
+        <input type="text" id="input" placeholder="Type your message">
+        <button class="mic" id="mic"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg></button>
+        <button class="send" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// CONFIGURATION
+// =====================================================
+
+// Sample trash can images (replace with your actual images)
+const IMAGES = [
+  'https://m.media-amazon.com/images/I/61Y7PMrJNnL.jpg',
+  'https://i.ebayimg.com/images/g/W5UAAOSwo85myi0N/s-l1200.jpg',
+  'https://img.freepik.com/premium-photo/metal-trash-bin-from-paper-isolated-white_392895-139923.jpg',
+  'https://thumbs.dreamstime.com/b/overflowing-trash-can-filled-various-types-garbage-waste-isolated-transparent-white-background-png-file-351698555.jpg',
+  'https://t4.ftcdn.net/jpg/18/07/57/31/360_F_1807573150_Lf2SkiqR4oNXeo2c7cqbiHIee9CQGta1.jpg',
+];
+
+// =====================================================
+// CONVERSATION FLOW - Based on Figma WP 1.1 Chat-based
+// =====================================================
+const CONVERSATION = {
+  both: [
+    // Welcome Screen
+    { agent: "Hallo! Welcome to today's test 👋. I'll be here to guide you through every step.\n\nDon't worry, it won't take long, and I'll make sure it's clear and easy!\n\nAre you ready to get started? 🚀", wait: true },
+    
+    // Instructions
+    { agent: "Perfect ✨! Oke, so here's what we'll have to do together:\n\n1. You will be shown <b>30 images</b>, each containing a trash can.\n2. Your job is to <b>estimate how full each trash can is, as a percentage from 0 to 100</b>.\n\nAlright, enough talking! Shall we warm up with the first image?", wait: true },
+    
+    // Task - Image 1 (split into 3 messages: label, question, image)
+    { imageLabel: "Image 1" },
+    { question: "How full do you think this trash can is?" },
+    { image: 0, wait: true },
+    
+    // Task - Image 2
+    { agent: "Got it, {response}% 👍. Thanks for that!\n\nYour answer is recorded. Let's move to the next one ➡️" },
+    { imageLabel: "Image 2" },
+    { question: "What do you think?" },
+    { image: 1, wait: true },
+    
+    // Task - Image 3
+    { agent: "Alright, {response}% noted!" },
+    { imageLabel: "Image 3" },
+    { question: "How full does this one seem?" },
+    { image: 2, wait: true },
+    
+    // Task - Image 4
+    { agent: "Okay, {response}%. Thanks! Let's keep going." },
+    { imageLabel: "Image 4" },
+    { question: "Your estimate?" },
+    { image: 3, wait: true },
+    
+    // Task - Image 5
+    { agent: "{response}%, got it!" },
+    { imageLabel: "Image 5" },
+    { question: "Your estimate?" },
+    { image: 4, wait: true },
+    
+    // Evaluation start
+    { agent: "{response}% is recorded!" },
+    { agent: "You've finished this part of the task 🎉. Great job putting in the effort! 🌟" },
+    { agent: "I've sent all your answers to the system for analysis. The system will handle the evaluation.\n\nI'm just here to guide you through the process and share the results with you 😊" },
+    { agent: "Alright, I've received the results now.", delay: 3000 },
+  ],
+  
+  // Good News condition
+  positive: [
+    { report: { passed: "10 / 10", met: true } },
+    { agent: "As a result, you'll <b>receive the full bonus of 3€</b>, in addition to the base payment of 3€ 💰" },
+    { agent: "Thank you so much for participating. I truly hope you have a lovely day ahead!\n\nGoodbye! 👋", end: true },
+  ],
+  
+  // Bad News condition
+  negative: [
+    { report: { passed: "4 / 10", met: false } },
+    { agent: "As a result, the <b>3€ bonus cannot be awarded</b> 😔, and you will <b>receive only the base payment of 3€</b>." },
+    { agent: "Thank you so much for participating. I truly hope you have a lovely day ahead!\n\nGoodbye! 👋", end: true },
+  ]
+};
+
+// =====================================================
+
+let condition = 'negative';
+let steps = [];
+let stepIdx = 0;
+let lastResponse = '';
+let recognition = null;
+let isListening = false;
+let inputEnabled = false;
+
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+// Speech Recognition
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  
+  recognition.onstart = () => {
+    isListening = true;
+    $('mic').classList.add('on');
+    $('inputRow').classList.add('rec');
+  };
+  
+  recognition.onresult = e => {
+    let text = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      text = e.results[i][0].transcript;
+    }
+    $('input').value = text;
+  };
+  
+  recognition.onend = () => {
+    isListening = false;
+    $('mic').classList.remove('on');
+    $('inputRow').classList.remove('rec');
+    $('input').focus();
+  };
+  
+  recognition.onerror = () => {
+    isListening = false;
+    $('mic').classList.remove('on');
+    $('inputRow').classList.remove('rec');
+  };
+}
+
+function toggleMic() {
+  if (!recognition) { alert('Speech not supported. Use Chrome.'); return; }
+  if (isListening) recognition.stop();
+  else { $('input').value = ''; recognition.start(); }
+}
+
+// Messages - NO background for agent text
+function addTextMsg(text, type) {
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  div.innerHTML = text.replace(/\n/g, '<br>');
+  $('msgs').insertBefore(div, $('typing'));
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+
+// Image label - bigger, bold, separate message WITH divider line above
+function addImageLabel(label) {
+  // Add divider line first
+  const divider = document.createElement('div');
+  divider.className = 'divider';
+  $('msgs').insertBefore(divider, $('typing'));
+  
+  // Then add label
+  const div = document.createElement('div');
+  div.className = 'msg image-label';
+  div.textContent = label;
+  $('msgs').insertBefore(div, $('typing'));
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+
+// Question - separate message
+function addQuestion(question) {
+  const div = document.createElement('div');
+  div.className = 'msg question';
+  div.textContent = question;
+  $('msgs').insertBefore(div, $('typing'));
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+
+// Image only
+function addImage(imgIdx) {
+  const div = document.createElement('div');
+  div.className = 'msg image-msg';
+  div.innerHTML = `<img src="${IMAGES[imgIdx]}" alt="Trash can image">`;
+  $('msgs').insertBefore(div, $('typing'));
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+
+// System evaluation report - plain text, no box
+function addEvaluationReport(passed, met) {
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.innerHTML = `
+    <b>System evaluation report:</b><br><br>
+    • Control images passed: ${passed}<br>
+    • Required standard ${met ? 'met ✅' : 'not met ❌'}
+  `;
+  $('msgs').insertBefore(div, $('typing'));
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+
+function showTyping(on) { 
+  $('typing').classList.toggle('hidden', !on);
+  if (on) {
+    
+    
+  } else {
+    
+  }
+}
+
+function showInput(on) { 
+  inputEnabled = on;
+  $('input').disabled = !on;
+  $('sendBtn').disabled = !on;
+  $('mic').disabled = !on;
+  
+  if (on) $('input').focus();
+}
+
+// Simulate typing delay
+function getTypingDelay(text) {
+  const words = text.replace(/<[^>]*>/g, '').split(/\s+/).length;
+  return Math.min(Math.max(words * 80, 500), 2000);
+}
+
+// Flow
+async function nextStep() {
+  if (stepIdx >= steps.length) {
+    showInput(false);
+    $('chatEnded').classList.remove('hidden');
+    return;
+  }
+  
+  const step = steps[stepIdx++];
+  
+  // Handle delay before this step
+  if (step.delay) {
+    showTyping(true);
+    await delay(step.delay);
+    showTyping(false);
+  }
+  
+  // Handle image label (e.g., "Image 1") - separate bigger message with divider
+  if (step.imageLabel) {
+    showTyping(true);
+    await delay(300);
+    showTyping(false);
+    addImageLabel(step.imageLabel);
+    await delay(200);
+    nextStep();
+    return;
+  }
+  
+  // Handle question - separate message
+  if (step.question) {
+    showTyping(true);
+    await delay(300);
+    showTyping(false);
+    addQuestion(step.question);
+    await delay(200);
+    nextStep();
+    return;
+  }
+  
+  // Handle image only
+  if (step.image !== undefined && !step.agent) {
+    showTyping(true);
+    await delay(300);
+    showTyping(false);
+    addImage(step.image);
+    
+    if (step.wait) {
+      showInput(true);
+    } else {
+      await delay(300);
+      nextStep();
+    }
+    return;
+  }
+  
+  // Handle evaluation report
+  if (step.report) {
+    showTyping(true);
+    await delay(800);
+    showTyping(false);
+    addEvaluationReport(step.report.passed, step.report.met);
+    await delay(500);
+    nextStep();
+    return;
+  }
+  
+  // Handle text message
+  if (step.agent) {
+    showTyping(true);
+    
+    // Replace {response} with last user response
+    let displayText = step.agent.replace('{response}', lastResponse);
+    
+    await delay(getTypingDelay(displayText));
+    showTyping(false);
+    
+    addTextMsg(displayText, 'agent');
+    await delay(300);
+  }
+  
+  // Handle end of chat
+  if (step.end) {
+    showInput(false);
+    
+    $('chatEnded').classList.remove('hidden');
+    return;
+  }
+  
+  if (step.wait) {
+    showInput(true);
+  } else {
+    nextStep();
+  }
+}
+
+function sendResponse() {
+  if (!inputEnabled) return;
+  const text = $('input').value.trim();
+  if (!text) return;
+  lastResponse = text;
+  $('input').value = '';
+  addTextMsg(text, 'user');
+  showInput(false);
+  setTimeout(nextStep, 300);
+}
+
+// Init
+function init() {
+  initSpeech();
+}
+
+// Events
+$('btnPos').onclick = () => { 
+  condition = 'positive'; 
+  $('btnPos').classList.add('on'); 
+  $('btnNeg').classList.remove('on'); 
+};
+$('btnNeg').onclick = () => { 
+  condition = 'negative'; 
+  $('btnNeg').classList.add('on'); 
+  $('btnPos').classList.remove('on'); 
+};
+
+$('startBtn').onclick = async () => {
+  steps = [...CONVERSATION.both, ...CONVERSATION[condition]];
+  
+  $('welcome').classList.add('hidden');
+  $('app').classList.add('on');
+  
+  showInput(false);
+  await delay(300);
+  stepIdx = 0;
+  nextStep();
+};
+
+$('mic').onclick = toggleMic;
+$('sendBtn').onclick = sendResponse;
+$('input').onkeydown = e => { if (e.key === 'Enter') sendResponse(); };
+
+init();
+</script>
+</body>
+</html>
