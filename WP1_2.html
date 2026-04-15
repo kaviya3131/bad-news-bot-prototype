@@ -192,8 +192,8 @@
 // ── Config ──────────────────────────────────────────────────────────────────
 // Avatar photos matching Figma (Anna = dark hair female, Thomas = professional male)
 const PHOTOS = {
-  female: './woman.png',
-  male:   './man.png',
+  female: 'https://cdnai.iconscout.com/ai-image/premium/thumb/ai-businesswoman-3d-icon-png-download-jpg-13296035.png',
+  male:   'https://cdnai.iconscout.com/ai-image/premium/thumb/ai-dentist-3d-icon-png-download-jpg-13295949.png',
 };
 const NAMES = { female:'Anna', male:'Thomas', none:'TX2000-Bot' };
 // Trash can images from Loan
@@ -288,8 +288,8 @@ function renderPreview() {
     el.style.background = '#1a237e';
     el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg><div class="online-dot"></div>`;
   } else {
-    el.style.background = '#1a237e';
-    el.innerHTML = `<img src="./${gender === 'female' ? 'woman' : 'man'}" alt="${gender}"><div class="online-dot"></div>`;
+    el.style.background = 'transparent';
+    el.innerHTML = `<img src="${PHOTOS[gender]}" alt="${gender}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0;"><div class="online-dot"></div>`;
   }
 }
 
@@ -300,8 +300,8 @@ function setSidebar() {
     el.style.background = '#1a237e';
     el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg><div class="dot"></div>`;
   } else {
-    el.style.background = '#1a237e';
-    el.innerHTML = `<img src="./${gender === 'female' ? 'woman' : 'man'}" alt="${gender}"><div class="dot"></div>`;
+    el.style.background = 'transparent';
+    el.innerHTML = `<img src="${PHOTOS[gender]}" alt="${gender}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0;"><div class="dot"></div>`;
   }
 }
 
