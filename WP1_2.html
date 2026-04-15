@@ -10,12 +10,43 @@
 
     #welcome { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%); }
     #welcome.hidden { display: none; }
-    h1 { color: white; font-size: 26px; margin-bottom: 6px; }
-    .subtitle { color: rgba(255,255,255,0.8); margin-bottom: 20px; font-size: 13px; }
+    h1 { color: white; font-size: 26px; margin-bottom: 10px; }
+    .subtitle { color: rgba(255,255,255,0.8); margin-bottom: 20px; font-size: 14px; }
 
-    .preview-avatar { width: 130px; height: 130px; border-radius: 50%; margin-bottom: 20px; overflow: hidden; border: 4px solid white; display: flex; align-items: center; justify-content: center; position: relative; background: #1a237e; }
-    .preview-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .preview-avatar .online-dot { position: absolute; top: 7px; right: 7px; width: 18px; height: 18px; background: #4ade80; border-radius: 50%; border: 3px solid #3949ab; }
+    .preview-avatar {
+      width: 120px;
+      height: 120px;
+      background: #1a237e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .preview-avatar svg {
+      width: 70px;
+      height: 70px;
+      fill: white;
+      flex-shrink: 0;
+    }
+    .preview-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .preview-avatar .online-dot {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 20px;
+      height: 20px;
+      background: #4ade80;
+      border-radius: 50%;
+      border: 3px solid #3949ab;
+      z-index: 2;
+    }
 
     .btn-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
     .sel-btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 2px solid rgba(255,255,255,0.4); cursor: pointer; background: rgba(255,255,255,0.15); color: white; transition: all 0.2s; }
@@ -28,9 +59,41 @@
     #app.on { display: flex; }
 
     .sidebar { width: 210px; min-width: 210px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; padding: 28px 16px; }
-    .av-wrap { width: 145px; height: 145px; border-radius: 50%; overflow: hidden; margin-bottom: 14px; border: 3px solid #e2e8f0; position: relative; display: flex; align-items: center; justify-content: center; background: #1a237e; }
-    .av-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .av-wrap .dot { position: absolute; top: 9px; right: 9px; width: 16px; height: 16px; background: #4ade80; border-radius: 50%; border: 3px solid white; }
+    .av-wrap {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      margin-bottom: 14px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a237e;
+    }
+    .av-wrap svg {
+      width: 90px;
+      height: 90px;
+      fill: white;
+      flex-shrink: 0;
+    }
+    .av-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      clip-path: circle(50%);
+    }
+    .av-wrap .dot {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      background: #4ade80;
+      border-radius: 50%;
+      border: 3px solid white;
+      z-index: 2;
+    }
     .agent-name { font-size: 19px; font-weight: 700; color: #1a202c; margin-bottom: 3px; }
     .agent-role { font-size: 12px; color: #718096; }
 
@@ -81,11 +144,12 @@
 <body>
 
 <div id="welcome">
-  <div class="preview-avatar" id="previewAv">
-    <div class="online-dot"></div>
-  </div>
   <h1 id="wTitle">WP 1.2 – Anna (Female)</h1>
   <p class="subtitle">Select gender condition and outcome</p>
+  <div class="preview-avatar" id="previewAv">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+    <div class="online-dot"></div>
+  </div>
 
   <div class="btn-group" style="margin-bottom:8px">
     <button class="sel-btn on" id="gF" onclick="setGender('female')">Female – Anna</button>
@@ -103,7 +167,7 @@
 
 <div id="app">
   <div class="sidebar">
-    <div class="av-wrap" id="sideAv"><div class="dot"></div></div>
+    <div class="av-wrap" id="sideAv"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg><div class="dot"></div></div>
     <div class="agent-name" id="agentName">Anna</div>
     <div class="agent-role">AI assistant</div>
   </div>
@@ -128,8 +192,8 @@
 // ── Config ──────────────────────────────────────────────────────────────────
 // Avatar photos matching Figma (Anna = dark hair female, Thomas = professional male)
 const PHOTOS = {
-  female: 'PASTE_FEMALE_AVATAR_IMAGE_URL_HERE',  // TODO: paste female avatar image URL (Anna)
-  male:   'PASTE_MALE_AVATAR_IMAGE_URL_HERE',    // TODO: paste male avatar image URL (Thomas)
+  female: './woman.png',
+  male:   './man.png',
 };
 const NAMES = { female:'Anna', male:'Thomas', none:'TX2000-Bot' };
 // Trash can images from Loan
@@ -220,28 +284,28 @@ function setCond(c) {
 
 function renderPreview() {
   const el = document.getElementById('previewAv');
-  if (gender==='none') {
-    el.style.background='#1a237e';
-    el.innerHTML = botIcon(60) + '<div class="online-dot"></div>';
+  if (gender === 'none') {
+    el.style.background = '#1a237e';
+    el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg><div class="online-dot"></div>`;
   } else {
-    el.style.background='#e2e8f0';
-    el.innerHTML = `<img src="${PHOTOS[gender]}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"><div class="online-dot"></div>`;
+    el.style.background = '#1a237e';
+    el.innerHTML = `<img src="./${gender === 'female' ? 'woman' : 'man'}" alt="${gender}"><div class="online-dot"></div>`;
   }
 }
 
 function setSidebar() {
   const el = document.getElementById('sideAv');
   document.getElementById('agentName').textContent = NAMES[gender];
-  if (gender==='none') {
-    el.style.background='#1a237e';
-    el.innerHTML = botIcon(75) + '<div class="dot"></div>';
+  if (gender === 'none') {
+    el.style.background = '#1a237e';
+    el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg><div class="dot"></div>`;
   } else {
-    el.style.background='#e2e8f0';
-    el.innerHTML = `<img src="${PHOTOS[gender]}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"><div class="dot"></div>`;
+    el.style.background = '#1a237e';
+    el.innerHTML = `<img src="./${gender === 'female' ? 'woman' : 'man'}" alt="${gender}"><div class="dot"></div>`;
   }
 }
 
-const BOT_IMAGE_URL = 'PASTE_BOT_ICON_IMAGE_URL_HERE'; // TODO: paste no-gender bot avatar image URL (TX2000-Bot)
+const BOT_IMAGE_URL = ''; // No-gender uses robot SVG icon (same as WP1.1 Chat-based CA)
 
 function botIcon(size) {
   // Uses image if URL provided, otherwise falls back to SVG icon
@@ -341,19 +405,19 @@ async function nextStep() {
   if(stepIdx>=steps.length){setInput(false);$('chatEnded').classList.remove('hidden');return;}
   const s=steps[stepIdx++];
 
-  if(s.pause){showTyping(true);await delay(s.pause);showTyping(false);nextStep();return;}
-  if(s.img!==undefined){showTyping(true);await delay(400);showTyping(false);addImg(IMAGES[s.img]);await delay(300);nextStep();return;}
+  if(s.pause){showTyping(true);await delay(s.pause);showTyping(false);await nextStep();return;}
+  if(s.img!==undefined){showTyping(true);await delay(400);showTyping(false);addImg(IMAGES[s.img]);await delay(300);await nextStep();return;}
 
   if(s.a||s.html){
     showTyping(true); await delay(500); showTyping(false);
     let text=(s.a||s.html).replace(/\{r\}/g,lastResp);
-    addAgent(text, !!(s.html||s.html2));
+    await addAgent(text, !!(s.html||s.html2));
     await delay(200);
   }
 
   if(s.end){setInput(false);$('chatEnded').classList.remove('hidden');return;}
   if(s.wait){setInput(true);}
-  else{nextStep();}
+  else{await nextStep();}
 }
 
 function send() {
@@ -362,7 +426,7 @@ function send() {
   if(!t)return;
   lastResp=t; $('chatInput').value='';
   addUser(t); setInput(false);
-  setTimeout(nextStep,300);
+  setTimeout(()=>nextStep(),300);
 }
 
 function startChat() {
