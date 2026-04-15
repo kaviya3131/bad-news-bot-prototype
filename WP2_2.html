@@ -98,7 +98,7 @@
     /* Image */
     .b-image {
       align-self: flex-start; border-radius: 14px; overflow: hidden;
-      width: 280px; height: 210px; flex-shrink: 0;
+      width: 280px; height: 310px; flex-shrink: 0;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       background: #c8daf5; display: flex; align-items: center; justify-content: center;
       color: #93b8e0; font-size: 13px; position: relative;
@@ -367,33 +367,290 @@ function stopMouthAnim(timer) {
   } catch(e) {}
 }
 
-// ── TTS ───────────────────────────────────────────────────────────────────────
+// ── Lip-sync: boundary-timed viseme playback via Web Speech API ──────────────
+// Uses SpeechSynthesis 'boundary' events for real word timing.
+// Each word triggers its pre-computed viseme sequence at the exact right moment.
+
+// Oculus viseme amplitudes — tuned for natural, not exaggerated movement
+const VAMP = {
+  viseme_sil:0,   viseme_PP:0.05, viseme_FF:0.10, viseme_TH:0.12,
+  viseme_DD:0.10, viseme_kk:0.12, viseme_CH:0.15, viseme_SS:0.07,
+  viseme_nn:0.08, viseme_RR:0.13, viseme_aa:0.38, viseme_E:0.28,
+  viseme_I:0.20,  viseme_O:0.32,  viseme_U:0.24,
+};
+
+// Letter → viseme (handles digraphs first)
+function letterToViseme(word, i) {
+  const two = word.slice(i,i+2);
+  const one = word[i];
+  const DI = {th:'viseme_TH',sh:'viseme_CH',ch:'viseme_CH',ph:'viseme_FF',
+               wh:'viseme_U',ng:'viseme_kk',ck:'viseme_kk',qu:'viseme_kk'};
+  if (DI[two]) return [DI[two], 2];
+  const SI = {
+    a:'viseme_aa',e:'viseme_E',i:'viseme_I',o:'viseme_O',u:'viseme_U',
+    p:'viseme_PP',b:'viseme_PP',m:'viseme_PP',
+    f:'viseme_FF',v:'viseme_FF',
+    d:'viseme_DD',t:'viseme_DD',
+    s:'viseme_SS',z:'viseme_SS',x:'viseme_SS',
+    n:'viseme_nn',l:'viseme_nn',
+    k:'viseme_kk',g:'viseme_kk',c:'viseme_kk',q:'viseme_kk',
+    r:'viseme_RR',
+    w:'viseme_U',y:'viseme_I',
+    h:'viseme_sil',j:'viseme_CH',
+  };
+  return [SI[one] || 'viseme_sil', 1];
+}
+
+function wordToVisemes(word) {
+  const seq = [];
+  let i = 0;
+  while (i < word.length) {
+    const [v, step] = letterToViseme(word, i);
+    seq.push(v);
+    i += step;
+  }
+  return seq;
+}
+
+function textToTimeline(text, totalMs) {
+  // Build a timeline: [{t: ms, viseme, amp}, ...]
+  // Word boundary events give us exact word start times.
+  // We pre-compute the full viseme list and estimate timing.
+  const words = text.toLowerCase().replace(/[^a-z ]/g,'').split(/\s+/).filter(Boolean);
+  const totalPhonemes = words.reduce((s,w) => s + wordToVisemes(w).length + 1, 0);
+  const msPerPhoneme = totalMs / Math.max(totalPhonemes, 1);
+
+  const timeline = [];
+  let t = 0;
+  for (const word of words) {
+    const visemes = wordToVisemes(word);
+    for (const v of visemes) {
+      timeline.push({ t, viseme: v, amp: VAMP[v] ?? 0.5 });
+      t += msPerPhoneme;
+    }
+    // Short silence between words
+    timeline.push({ t, viseme: 'viseme_sil', amp: 0 });
+    t += msPerPhoneme * 0.5;
+  }
+  return timeline;
+}
+
+// ── Morph mesh finding ────────────────────────────────────────────────────────
+function getMorphInfo(mesh) {
+  if (!mesh?.morphTargetDictionary) return null;
+  const d = mesh.morphTargetDictionary;
+  const allV = ['viseme_sil','viseme_PP','viseme_FF','viseme_TH','viseme_DD',
+    'viseme_kk','viseme_CH','viseme_SS','viseme_nn','viseme_RR',
+    'viseme_aa','viseme_E','viseme_I','viseme_O','viseme_U'];
+  const map = {};
+  for (const v of allV) if (d[v] !== undefined) map[v] = d[v];
+  if (Object.keys(map).length === 0) return null;
+  const mouthOpenIdx = d['mouthOpen'] ?? d['jawOpen'] ?? null;
+  return { mesh, map, mouthOpenIdx };
+}
+
+function findFaceMesh() {
+  const candidates = [];
+  try {
+    for (const key of Object.keys(head)) {
+      const val = head[key];
+      if (val && typeof val === 'object' && typeof val.traverse === 'function') {
+        val.traverse(obj => {
+          if (!obj.isMesh || !obj.morphTargetDictionary) return;
+          const keys = Object.keys(obj.morphTargetDictionary);
+          const visemeCount = keys.filter(k => k.startsWith('viseme')).length;
+          if (visemeCount === 0) return;
+          const name = (obj.name || '').toLowerCase();
+          const isHead = name.includes('head') || name.includes('face');
+          const isEye  = name.includes('eye') || name.includes('teeth') || name.includes('tongue');
+          candidates.push({ obj, score: visemeCount*10 + (isHead?100:0) - (isEye?200:0) });
+        });
+      }
+    }
+  } catch(e) {}
+  if (!candidates.length) return null;
+  candidates.sort((a,b) => b.score - a.score);
+  return candidates[0].obj;
+}
+
+// ── Animation state ───────────────────────────────────────────────────────────
+let morphInfo = null;
+let rafId = null;
+let lipTimeline = [];
+let lipStartTime = 0;
+let lipTimelineIdx = 0;
+// Smooth state per viseme
+let currentAmps = {}; // visemeName → current amplitude
+let targetAmps  = {}; // visemeName → target amplitude
+
+function initAmps() {
+  const allV = ['viseme_sil','viseme_PP','viseme_FF','viseme_TH','viseme_DD',
+    'viseme_kk','viseme_CH','viseme_SS','viseme_nn','viseme_RR',
+    'viseme_aa','viseme_E','viseme_I','viseme_O','viseme_U'];
+  for (const v of allV) { currentAmps[v] = 0; targetAmps[v] = 0; }
+}
+initAmps();
+
+function lipFrame(now) {
+  if (!morphInfo) return;
+  const inf = morphInfo.mesh.morphTargetInfluences;
+  const map = morphInfo.map;
+
+  // Advance timeline
+  const elapsed = now - lipStartTime;
+  while (lipTimelineIdx < lipTimeline.length && lipTimeline[lipTimelineIdx].t <= elapsed) {
+    const { viseme, amp } = lipTimeline[lipTimelineIdx++];
+    // Zero all targets, then set new one
+    for (const v of Object.keys(targetAmps)) targetAmps[v] = 0;
+    targetAmps[viseme] = amp;
+  }
+
+  // Lerp all visemes (skip mouthOpen — driven separately below)
+  let maxAmp = 0;
+  for (const [v, idx] of Object.entries(map)) {
+    if (idx === morphInfo.mouthOpenIdx) continue;
+    const tgt = targetAmps[v] ?? 0;
+    const spd = tgt > currentAmps[v] ? 0.45 : 0.25;
+    currentAmps[v] += (tgt - currentAmps[v]) * spd;
+    inf[idx] = Math.max(0, currentAmps[v]);
+    if (v !== 'viseme_sil') maxAmp = Math.max(maxAmp, currentAmps[v]);
+  }
+
+  // Drive mouthOpen/jawOpen at 30% scale — subtle jaw only, no double-open
+  if (morphInfo.mouthOpenIdx !== null) {
+    const cur = inf[morphInfo.mouthOpenIdx] ?? 0;
+    inf[morphInfo.mouthOpenIdx] = cur + (maxAmp * 0.3 - cur) * 0.28;
+  }
+
+  rafId = requestAnimationFrame(lipFrame);
+}
+
+function startLip(timeline) {
+  if (!morphInfo) morphInfo = getMorphInfo(findFaceMesh());
+  if (!morphInfo) return;
+  stopLip();
+  initAmps();
+  lipTimeline = timeline || [];
+  lipTimelineIdx = 0;
+  lipStartTime = performance.now();
+  rafId = requestAnimationFrame(lipFrame);
+}
+
+function stopLip() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (morphInfo) {
+    const inf = morphInfo.mesh.morphTargetInfluences;
+    for (const idx of Object.values(morphInfo.map)) inf[idx] = 0;
+    if (morphInfo.mouthOpenIdx !== null) inf[morphInfo.mouthOpenIdx] = 0;
+  }
+  initAmps();
+}
+
 async function speak(text) {
-  const clean = stripEmoji(text);
-  if (!clean || !audioEnabled) {
-    // just animate mouth for duration estimate
-    const dur = Math.max(clean.split(' ').length * 350, 800);
-    isSpeaking = true;
-    const t = startMouthAnim();
-    await delay(dur);
-    stopMouthAnim(t);
-    isSpeaking = false;
+  const clean = stripForTTS(text);
+  if (!clean) return;
+
+  if (!audioEnabled || !head) {
+    await delay(Math.max(clean.split(' ').length * 320, 800));
     return;
   }
-  return new Promise(resolve => {
+
+  return new Promise((resolve) => {
     const voices = speechSynthesis.getVoices();
     const v = voices.find(v => v.lang.startsWith('en') &&
-      (v.name.includes('Samantha')||v.name.includes('Karen')||v.name.includes('Victoria')||v.name.includes('Zira')))
-      || voices.find(v => v.lang.startsWith('en'));
+      (v.name.includes('Samantha') || v.name.includes('Karen') ||
+       v.name.includes('Victoria') || v.name.includes('Zira') ||
+       v.name.includes('Google US')))
+      || voices.find(v => v.lang.startsWith('en-'));
+
     const utt = new SpeechSynthesisUtterance(clean);
     if (v) utt.voice = v;
-    utt.rate = 0.95; utt.pitch = 1.0;
-    let timer;
-    utt.onstart = () => { isSpeaking = true; timer = startMouthAnim(); };
-    utt.onend = () => { stopMouthAnim(timer); isSpeaking = false; resolve(); };
-    utt.onerror = () => { if(timer) stopMouthAnim(timer); isSpeaking = false; resolve(); };
+    utt.lang = 'en-US';
+    utt.rate = 0.9;
+    utt.pitch = 1.05;
+
+    let resolved = false;
+    let startedAt = 0;
+    // Track word boundaries for real-time resync
+    const wordBoundaries = []; // [{charIndex, timeMs}]
+
+    const done = () => {
+      if (resolved) return;
+      resolved = true;
+      stopLip();
+      isSpeaking = false;
+      resolve();
+    };
+
+    utt.onstart = () => {
+      isSpeaking = true;
+      startedAt = performance.now();
+      // Estimate total duration: ~130ms per word at rate 0.9
+      const wordCount = clean.split(/\s+/).length;
+      const estimatedMs = wordCount * 420 + 300;
+      // Build full timeline and start playback
+      const timeline = textToTimeline(clean, estimatedMs);
+      startLip(timeline);
+    };
+
+    // boundary event fires at each word — use it to resync the timeline
+    utt.onboundary = (e) => {
+      if (e.name !== 'word') return;
+      const elapsed = performance.now() - startedAt;
+      wordBoundaries.push({ charIndex: e.charIndex, timeMs: elapsed });
+
+      // Resync: find the word in the timeline and update lipStartTime offset
+      if (wordBoundaries.length >= 2 && lipTimeline.length > 0) {
+        // Count how many words have been spoken
+        const wordIdx = wordBoundaries.length - 1;
+        // Find approx timeline entry for this word
+        const words = clean.toLowerCase().replace(/[^a-z ]/g,'').split(/\s+/).filter(Boolean);
+        let phonemeOffset = 0;
+        for (let w = 0; w < Math.min(wordIdx, words.length); w++) {
+          phonemeOffset += wordToVisemes(words[w]).length + 1;
+        }
+        if (phonemeOffset < lipTimeline.length) {
+          const expectedT = lipTimeline[phonemeOffset].t;
+          // Shift start time so timeline.t matches actual elapsed
+          lipStartTime = performance.now() - elapsed + (elapsed - expectedT);
+        }
+      }
+    };
+
+    utt.onend = done;
+    utt.onerror = done;
+    setTimeout(done, clean.split(' ').length * 700 + 5000);
+
+    speechSynthesis.cancel();
     speechSynthesis.speak(utt);
   });
+}
+
+// Mouth morph animation for fallback mode
+function startMouthAnim() {
+  return setInterval(() => {
+    if (!head || !isSpeaking) return;
+    try {
+      const d = head.avatar?.morphTargetDictionary;
+      const inf = head.avatar?.morphTargetInfluences;
+      if (d && inf) {
+        const idx = d['jawOpen'] ?? d['mouthOpen'] ?? d['viseme_aa'];
+        if (idx !== undefined) inf[idx] = 0.2 + Math.random() * 0.5;
+      }
+    } catch(e) {}
+  }, 50);
+}
+
+function stopMouthAnim(timer) {
+  clearInterval(timer);
+  try {
+    const d = head.avatar?.morphTargetDictionary;
+    const inf = head.avatar?.morphTargetInfluences;
+    if (d && inf) {
+      const idx = d['jawOpen'] ?? d['mouthOpen'] ?? d['viseme_aa'];
+      if (idx !== undefined) inf[idx] = 0;
+    }
+  } catch(e) {}
 }
 
 // ── Messages ───────────────────────────────────────────────────────────────────

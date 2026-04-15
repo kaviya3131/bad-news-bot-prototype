@@ -46,10 +46,10 @@
     .msg-agent .bubble.instr li { margin-bottom: 3px; font-size: 14px; color: #2d3748; }
     .msg-user { align-self: flex-end; background: #e8edf7; border-radius: 12px 12px 3px 12px; padding: 9px 13px; color: #2d3748; font-size: 14px; max-width: 55%; }
 
-    .img-placeholder { align-self: flex-start; width: 320px; max-width: 85%; height: 240px; background: #dbeafe; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #93c5fd; font-size: 13px; overflow: hidden; flex-shrink: 0; }
+    .img-placeholder { align-self: flex-start; width: 320px; max-width: 85%; height: 320px; background: #dbeafe; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #93c5fd; font-size: 13px; overflow: hidden; flex-shrink: 0; }
     .img-placeholder img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; display: block; }
 
-    hr.divider { align-self: stretch; border: none; border-top: 1px solid #e2e8f0; margin: 4px 0; }
+    
 
     #typing { align-self: flex-start; display: flex; gap: 4px; padding: 9px 13px; background: #f1f5f9; border-radius: 12px; }
     #typing.hidden { display: none; }
@@ -128,8 +128,8 @@
 // ── Config ──────────────────────────────────────────────────────────────────
 // Avatar photos matching Figma (Anna = dark hair female, Thomas = professional male)
 const PHOTOS = {
-  female: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=300&fit=crop&crop=face',
-  male:   'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face'
+  female: 'PASTE_FEMALE_AVATAR_IMAGE_URL_HERE',  // TODO: paste female avatar image URL (Anna)
+  male:   'PASTE_MALE_AVATAR_IMAGE_URL_HERE',    // TODO: paste male avatar image URL (Thomas)
 };
 const NAMES = { female:'Anna', male:'Thomas', none:'TX2000-Bot' };
 // Trash can images from Loan
@@ -160,28 +160,28 @@ function buildSteps() {
     { a:"Oke nice! 😊" },
     { a:"Here's our <strong>first image!</strong>", html2:true },
     // Image 1
-    { div:true }, { img:0 },
+    { img:0 },
     { a:"How full do you think this trash can is?", wait:true },
     { a:"Got it, {r}% 👍. Thanks for that!" },
     { a:"Your answer is recorded. Let's move to the next one ➡️." },
     { a:"Here's Image 2" },
     // Image 2
-    { div:true }, { img:1 },
+    { img:1 },
     { a:"What do you think?", wait:true },
     { a:"Alright, {r}% noted!" },
     { a:"Image 3 coming up 👇!" },
     // Image 3
-    { div:true }, { img:2 },
+    { img:2 },
     { a:"How full does this one seem?", wait:true },
     { a:"Okay, {r}%. Thanks! Let's keep going." },
     { a:"Here's image 4" },
     // Image 4
-    { div:true }, { img:3 },
+    { img:3 },
     { a:"Your estimate?", wait:true },
     { a:"{r}% is noted!" },
     { a:"Image 5 now!" },
     // Image 5
-    { div:true }, { img:4 },
+    { img:4 },
     { a:"What would you say?", wait:true },
     { a:"{r}% is recorded!" },
     // Evaluation
@@ -241,7 +241,13 @@ function setSidebar() {
   }
 }
 
+const BOT_IMAGE_URL = 'PASTE_BOT_ICON_IMAGE_URL_HERE'; // TODO: paste no-gender bot avatar image URL (TX2000-Bot)
+
 function botIcon(size) {
+  // Uses image if URL provided, otherwise falls back to SVG icon
+  if (BOT_IMAGE_URL && !BOT_IMAGE_URL.startsWith('PASTE')) {
+    return `<img src="${BOT_IMAGE_URL}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%">`;
+  }
   return `<svg viewBox="0 0 50 50" style="width:${size}px;height:${size}px">
     <rect x="11" y="14" width="28" height="20" rx="5" fill="white"/>
     <rect x="16" y="19" width="7" height="7" rx="1.5" fill="#1a3a8f"/>
@@ -277,15 +283,40 @@ function toggleMic() {
 const $=id=>document.getElementById(id);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 
-function addAgent(text, isHtml=false) {
+async function addAgent(text, isHtml=false) {
   const msgs=$('msgs'), div=document.createElement('div');
   div.className='msg-agent';
   const b=document.createElement('div');
   b.className = isHtml?'bubble instr':'bubble';
-  b.innerHTML = isHtml ? text : text.replace(/\n/g,'<br>');
   div.appendChild(b);
   msgs.insertBefore(div,$('typing'));
   msgs.scrollTop=msgs.scrollHeight;
+
+  if (isHtml) {
+    // For HTML content (numbered list etc) type it in one go
+    b.innerHTML = text;
+  } else {
+    // Typewriter effect - character by character
+    const plain = text.replace(/\n/g,'<br>');
+    let i = 0;
+    await new Promise(resolve => {
+      const interval = setInterval(() => {
+        // Handle <br> tags as single units
+        if (plain.slice(i, i+4) === '<br>') {
+          b.innerHTML += '<br>';
+          i += 4;
+        } else {
+          b.innerHTML += plain[i];
+          i++;
+        }
+        msgs.scrollTop = msgs.scrollHeight;
+        if (i >= plain.length) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 28); // ~28ms per character = natural typing speed
+    });
+  }
 }
 function addUser(text) {
   const msgs=$('msgs'),div=document.createElement('div');
@@ -297,10 +328,6 @@ function addImg(url) {
   div.className='img-placeholder';
   div.innerHTML = url ? `<img src="${url}" alt="Task image">` : 'Trash can image';
   msgs.insertBefore(div,$('typing')); msgs.scrollTop=msgs.scrollHeight;
-}
-function addDivider() {
-  const msgs=$('msgs'),hr=document.createElement('hr');
-  hr.className='divider'; msgs.insertBefore(hr,$('typing')); msgs.scrollTop=msgs.scrollHeight;
 }
 function showTyping(on){$('typing').classList.toggle('hidden',!on);}
 function setInput(on){
@@ -315,7 +342,6 @@ async function nextStep() {
   const s=steps[stepIdx++];
 
   if(s.pause){showTyping(true);await delay(s.pause);showTyping(false);nextStep();return;}
-  if(s.div){addDivider();nextStep();return;}
   if(s.img!==undefined){showTyping(true);await delay(400);showTyping(false);addImg(IMAGES[s.img]);await delay(300);nextStep();return;}
 
   if(s.a||s.html){
