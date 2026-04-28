@@ -668,6 +668,30 @@ function sendResponse() {
   if (!inputEnabled) return;
   const text = $('input').value.trim();
   if (!text) return;
+  
+  // Validate input: must be a number between 0 and 100
+  const value = parseInt(text, 10);
+  if (isNaN(value) || value < 0 || value > 100) {
+    // Show error message and don't proceed
+    addTextMsg(text, 'user');
+    showInput(false);
+    $('input').value = '';
+    
+    // Show bot's error response after a short delay
+    setTimeout(() => {
+      showTyping(true);
+      setTimeout(() => {
+        showTyping(false);
+        addTextMsg("Please enter a value between 0 and 100%.", 'agent');
+        setTimeout(() => {
+          showInput(true);
+          $('input').focus();
+        }, 300);
+      }, 800);
+    }, 300);
+    return;
+  }
+  
   lastResponse = text;
   $('input').value = '';
   addTextMsg(text, 'user');
