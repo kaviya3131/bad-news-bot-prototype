@@ -664,32 +664,37 @@ async function nextStep() {
   }
 }
 
+
 function sendResponse() {
   if (!inputEnabled) return;
   const text = $('input').value.trim();
   if (!text) return;
   
-  // Validate input: must be a number between 0 and 100
-  const value = parseInt(text, 10);
-  if (isNaN(value) || value < 0 || value > 100) {
-    // Show error message and don't proceed
-    addTextMsg(text, 'user');
-    showInput(false);
-    $('input').value = '';
-    
-    // Show bot's error response after a short delay
-    setTimeout(() => {
-      showTyping(true);
+  // Check if current step is waiting for an image estimate (percentage 0-100)
+  const currentStep = steps[stepIdx - 1];
+  const isImageEstimate = currentStep && currentStep.image !== undefined && currentStep.wait;
+  
+  // Validate input only for image estimates
+  if (isImageEstimate) {
+    const value = parseInt(text, 10);
+    if (isNaN(value) || value < 0 || value > 100) {
+      addTextMsg(text, 'user');
+      showInput(false);
+      $('input').value = '';
+      
       setTimeout(() => {
-        showTyping(false);
-        addTextMsg("Please enter a value between 0 and 100%.", 'agent');
+        showTyping(true);
         setTimeout(() => {
-          showInput(true);
-          $('input').focus();
-        }, 300);
-      }, 800);
-    }, 300);
-    return;
+          showTyping(false);
+          addTextMsg("Please enter a value between 0 and 100%.", 'agent');
+          setTimeout(() => {
+            showInput(true);
+            $('input').focus();
+          }, 300);
+        }, 800);
+      }, 300);
+      return;
+    }
   }
   
   lastResponse = text;
@@ -698,7 +703,6 @@ function sendResponse() {
   showInput(false);
   setTimeout(nextStep, 300);
 }
-
 // Init
 function init() {
   initSpeech();
