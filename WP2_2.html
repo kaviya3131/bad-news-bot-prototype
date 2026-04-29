@@ -323,13 +323,19 @@ async function nextStep() {
 }
 
 function sendResponse() {
-  if (!inputEnabled) return;
-  const text = $('input').value.trim();
-  if (!text) return;
+  if(!inputEnabled)return;
+  const text=$('input').value.trim();
+  if(!text)return;
   
   // Check if current step is waiting for an image estimate (percentage 0-100)
-  const currentStep = steps[stepIdx - 1];
-  const isImageEstimate = currentStep && currentStep.image !== undefined && currentStep.wait;
+  // Look back through steps to find if we're in an image estimation context
+  let isImageEstimate = false;
+  for (let i = stepIdx - 1; i >= Math.max(0, stepIdx - 5); i--) {
+    if (steps[i] && steps[i].image !== undefined) {
+      isImageEstimate = true;
+      break;
+    }
+  }
   
   // Validate input only for image estimates
   if (isImageEstimate) {
@@ -354,11 +360,9 @@ function sendResponse() {
     }
   }
   
-  lastResponse = text;
-  $('input').value = '';
-  addTextMsg(text, 'user');
-  showInput(false);
-  setTimeout(nextStep, 300);
+  lastResponse=text; $('input').value='';
+  addTextMsg(text,'user'); showInput(false);
+  setTimeout(nextStep,300);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
