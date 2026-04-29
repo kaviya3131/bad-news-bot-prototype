@@ -424,6 +424,32 @@ function send() {
   if(!inputOn)return;
   const t=$('chatInput').value.trim();
   if(!t)return;
+  
+  // Check if current step is waiting for an image estimate (percentage 0-100)
+  const currentStep = steps[stepIdx - 1];
+  const isImageEstimate = currentStep && currentStep.img !== undefined && currentStep.wait;
+  
+  // Validate input only for image estimates
+  if (isImageEstimate) {
+    const value = parseInt(t, 10);
+    if (isNaN(value) || value < 0 || value > 100) {
+      addUser(t);
+      setInput(false);
+      $('chatInput').value = '';
+      
+      setTimeout(async () => {
+        showTyping(true);
+        await delay(800);
+        showTyping(false);
+        await addAgent("Please enter a value between 0 and 100%.");
+        await delay(300);
+        setInput(true);
+        $('chatInput').focus();
+      }, 300);
+      return;
+    }
+  }
+  
   lastResp=t; $('chatInput').value='';
   addUser(t); setInput(false);
   setTimeout(()=>nextStep(),300);
