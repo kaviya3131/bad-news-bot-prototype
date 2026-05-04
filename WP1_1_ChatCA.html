@@ -687,7 +687,7 @@ function sendResponse() {
         setTimeout(() => {
           showTyping(false);
           addTextMsg("<b>Please enter a value between 0 and 100%.</b>", 'agent');
-          await speak("Please enter a value between 0 and 100 percent.");
+          speak("Please enter a value between 0 and 100 percent.");
           setTimeout(() => {
             showInput(true);
             $('input').focus();
